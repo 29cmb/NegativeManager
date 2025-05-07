@@ -8,3 +8,10 @@ export enum LogLevel {
     BOOTING,
     OTHER
 }
+
+export interface Controller {
+    name: string;
+    description: string;
+    version: string;
+    init(): void;
+}
