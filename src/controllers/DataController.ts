@@ -1,4 +1,4 @@
-import { Controller } from "../Types";
+import { BackendConfiguration, Controller } from "../Types";
 import * as fs from "fs";
 import * as path from "path";
 import Logging from "../util/Logging";
@@ -56,5 +56,14 @@ export default class DataController implements Controller {
 
             }
         });
+    }
+
+    public GetAppdataFileContents(filePath: string): string|null {
+        const joinedPath = path.join(APPDATA_PATH, filePath);
+        if (fs.existsSync(joinedPath)) {
+            return fs.readFileSync(joinedPath, { encoding: 'utf8' });
+        }
+
+        return null;
     }
 }

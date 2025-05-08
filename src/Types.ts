@@ -15,3 +15,10 @@ export interface Controller {
     version: string;
     init(): void;
 }
+
+export type BackendConfiguration = {
+    Debug: {
+        LaunchBalatroOnStart: boolean
+    },
+    ControllerAwaitTimeout: number
+}

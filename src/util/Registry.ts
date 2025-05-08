@@ -2,6 +2,7 @@ import Logging from "./Logging"
 import * as fs from "fs"
 import * as path from "path"
 import { Controller } from "../Types"
+import Config from "./Config"
 
 const controllers: {[name: string]: Controller} = {}
 
@@ -28,7 +29,32 @@ const registerControllers = () => {
     })
 }
 
+const AwaitController = (name: string): Promise<Controller> => {
+    return new Promise((resolve, reject) => {
+        var failed = false
+        var completed = false
+
+        const interval = setInterval(() => {
+            if (controllers[name] && !failed) {
+                clearInterval(interval)
+                completed = true
+                resolve(controllers[name])
+            }
+        }, 1000)
+
+        setTimeout(() => {
+            if(!completed) {
+                clearInterval(interval)
+                failed = true
+                Logging.error(`Controller ${name} search timed out.`)
+                reject(false)
+            }
+        }, Config.ControllerAwaitTimeout)
+    });
+}
+
 export default {
     controllers,
-    registerControllers
+    registerControllers,
+    AwaitController
 }
