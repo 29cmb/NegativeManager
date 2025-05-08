@@ -1,4 +1,5 @@
 import { Controller } from "../Types";
+import Logging from "../util/Logging";
 
 export default class BalatroController implements Controller {
     public name: string = "BalatroController";

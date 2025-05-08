@@ -6,14 +6,14 @@ const messages = {
     [LogLevel.PACKAGE_REGISTRATION]: '📦 | %s',
     [LogLevel.WARNING]: '⚠️ | %s',
     [LogLevel.ERROR]: '❌ | %s',
-    [LogLevel.DEBUG]: '🛠️ | %s',
+    [LogLevel.DEBUG]: '🛠️  | %s', // requires an extra space for whatever reason
     [LogLevel.BOOTING]: '🚀 | %s',
     [LogLevel.OTHER]: '%s',
 }
 
 const log = (message: string, level: LogLevel) => {
     if(message === undefined || message === null) {
-        error('Message is undefined or null'); // recursion 🤑
+        error('Message is undefined or null'); // i used the logging to destroy the logging. recursion 🤑
         return;
     }
 
