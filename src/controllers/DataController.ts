@@ -6,10 +6,16 @@ import Logging from "../util/Logging";
 const defaultFiles = [
     {
         name: 'config.json',
+        type: 'file',
         content: JSON.stringify({
-            "balatro_data_path": "C:\\Users\\User\\AppData\\Roaming\\Balatro",
+            "balatro_data_path": "%APPDATA%\\Balatro",
             "balatro_steam_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Balatro",
+            "profiles_directory": "%APPDATA%\\Balatro Instance Manager\\Profiles"
         })
+    },
+    {
+        name: "profiles",
+        type: "directory"
     }
 ]
 
@@ -29,8 +35,25 @@ export default class DataController implements Controller {
     
         defaultFiles.forEach(file => {
             const filePath = path.join(APPDATA_PATH, file.name);
-            if (!fs.existsSync(filePath)) {
-                fs.writeFileSync(filePath, file.content, { encoding: 'utf8' });
+
+            switch (file.type) {
+                case 'file':
+                    file = file as { name: string, type: 'file', content: string };
+                    file.content = file.content.replace(/%APPDATA%/g, process.env.APPDATA || '');
+
+                    if (!fs.existsSync(filePath)) {
+                        fs.writeFileSync(filePath, file.content, { encoding: 'utf8' });
+                    }
+                    break;
+                case 'directory':
+                    file = file as { name: string, type: 'directory' };
+                    if (!fs.existsSync(filePath)) {
+                        fs.mkdirSync(filePath, { recursive: true });
+                    }
+                    break;
+                default:
+                    Logging.error(`Unknown file type: ${file.type}`);
+
             }
         });
     }
