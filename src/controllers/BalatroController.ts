@@ -161,12 +161,6 @@ export default class BalatroController implements Controller {
             return
         }
 
-        const clonePath = parsedConfig.balatro_steam_path
-        if (!fs.existsSync(clonePath)) {
-            Logging.error("Vanilla path to copy does not exist, cannot create new profile: " + clonePath)
-            return
-        }
-
         if(parsedConfig.profiles_directory === undefined || parsedConfig.profiles_directory === null || !fs.existsSync(parsedConfig.profiles_directory)) {
             Logging.error("Profiles directory not set in config or does not exist. Cannot create new profile.")
             return
@@ -179,9 +173,6 @@ export default class BalatroController implements Controller {
         }
 
         fs.mkdirSync(profilePath, { recursive: true })
-        fs.readdirSync(clonePath).forEach(file => {
-            fs.copyFileSync(path.join(clonePath, file), path.join(profilePath, file))
-        })
 
         ProfileContents.forEach(file => {
             const filePath = path.join(profilePath, file.name)
