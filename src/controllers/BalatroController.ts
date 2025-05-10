@@ -3,7 +3,7 @@ import { Controller, ManagerConfiguration } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
-import DataController from "./DataController";
+import DataController, { APPDATA_PATH } from "./DataController";
 import { spawn } from "child_process";
 import path from "path";
 
@@ -22,6 +22,18 @@ export default class BalatroController implements Controller {
 
         if(Config.Debug.LaunchBalatroOnStart) {
             this.LaunchBalatro(Config.Debug.AutolaunchProfile)
+        }
+
+        if(Config.Debug.CreateDefaultProfile){
+            const defaultProfileName = Config.Debug.DefaultProfileName
+            const profilePath = this.GetProfile(defaultProfileName)
+
+            if (!profilePath) {
+                this.NewProfile(defaultProfileName)
+                Logging.debug("Created default profile: " + defaultProfileName)
+            } else {
+                Logging.debug("Default profile already exists: " + defaultProfileName)
+            }
         }
     }
 
@@ -66,5 +78,69 @@ export default class BalatroController implements Controller {
                 Logging.success("Balatro process exited successfully.")
             }
         })
+    }
+
+    public NewProfile(profileName: string): void {
+        if (!this.DC) {
+            Logging.error("DataController has not yet been initialized. Cannot create new profile.")
+            return
+        }
+        
+        const config = this.DC.GetAppdataFileContents("config.json")
+        if (!config) {
+            Logging.error("Config file not found. Cannot create new profile.")
+            return
+        }
+
+        const parsedConfig: ManagerConfiguration = JSON.parse(config);
+        if(!parsedConfig) {
+            Logging.error("Failed to parse config file. Cannot create new profile.")
+            return
+        }
+
+        const clonePath = parsedConfig.balatro_steam_path
+        if (!fs.existsSync(clonePath)) {
+            Logging.error("Vanilla path to copy does not exist, cannot create new profile: " + clonePath)
+            return
+        }
+
+        if(parsedConfig.profiles_directory === undefined || parsedConfig.profiles_directory === null || !fs.existsSync(parsedConfig.profiles_directory)) {
+            Logging.error("Profiles directory not set in config or does not exist. Cannot create new profile.")
+            return
+        }
+
+        const profilePath = `${parsedConfig.profiles_directory}\\${profileName}`
+        if (fs.existsSync(profilePath)) {
+            Logging.error("Profile already exists: " + profilePath)
+            return
+        }
+
+        fs.mkdirSync(profilePath, { recursive: true })
+    }
+
+    public GetProfile(profileName: string): string | null {
+        if (!this.DC) {
+            Logging.error("DataController has not yet been initialized. Cannot get profile.")
+            return null
+        }
+
+        const config = this.DC.GetAppdataFileContents("config.json")
+        if (!config) {
+            Logging.error("Config file not found. Cannot get profile.")
+            return null
+        }
+
+        const parsedConfig: ManagerConfiguration = JSON.parse(config);
+        if (!parsedConfig) {
+            Logging.error("Failed to parse config file. Cannot get profile.")
+            return null
+        }
+
+        const profilePath = `${parsedConfig.profiles_directory}\\${profileName}`
+        if (!fs.existsSync(profilePath)) {
+            return null
+        }
+
+        return profilePath
     }
 }

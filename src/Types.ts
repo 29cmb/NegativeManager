@@ -20,7 +20,9 @@ export interface Controller {
 export type BackendConfiguration = {
     Debug: {
         LaunchBalatroOnStart: boolean,
-        AutolaunchProfile: string | undefined
+        AutolaunchProfile: string | undefined,
+        CreateDefaultProfile: boolean,
+        DefaultProfileName: string
     },
     ControllerAwaitTimeout: number
 }

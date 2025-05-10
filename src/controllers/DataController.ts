@@ -1,4 +1,4 @@
-import { BackendConfiguration, Controller } from "../Types";
+import { Controller } from "../Types";
 import * as fs from "fs";
 import * as path from "path";
 import Logging from "../util/Logging";
@@ -11,7 +11,30 @@ const defaultFiles = [
             "balatro_data_path": "%APPDATA%\\Balatro",
             "balatro_steam_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Balatro",
             "profiles_directory": "%APPDATA%\\Balatro Instance Manager\\Profiles"
-        })
+        }),
+        validate: (defalutContent: string, content: string) => {
+            Logging.debug("Validating config.json...\n\n" + defalutContent + "\n" + content);
+
+            const defaultJson = JSON.parse(defalutContent);
+            const parsedJson = JSON.parse(content);
+
+            if(!parsedJson.balatro_data_path || typeof(parsedJson.balatro_data_path) !== 'string' || !fs.existsSync(parsedJson.balatro_data_path)) {
+                Logging.error("Invalid balatro_data_path in config.json, resetting to default.")
+                parsedJson.balatro_data_path = defaultJson.balatro_data_path
+            }
+
+            if(!parsedJson.balatro_steam_path || typeof(parsedJson.balatro_steam_path) !== 'string' || !fs.existsSync(parsedJson.balatro_steam_path)) {
+                Logging.error("Invalid balatro_steam_path in config.json, resetting to default.")
+                parsedJson.balatro_steam_path = defaultJson.balatro_steam_path
+            }
+
+            if(!parsedJson.profiles_directory || typeof(parsedJson.profiles_directory) !== 'string' || !fs.existsSync(parsedJson.profiles_directory)) {
+                Logging.error("Invalid profiles_directory in config.json, resetting to default.")
+                parsedJson.profiles_directory = defaultJson.profiles_directory
+            }
+
+            fs.writeFileSync(path.join(APPDATA_PATH, 'config.json'), JSON.stringify(parsedJson, null, 4), { encoding: 'utf8' });
+        }
     },
     {
         name: "profiles",
@@ -38,12 +61,15 @@ export default class DataController implements Controller {
 
             switch (file.type) {
                 case 'file':
-                    file = file as { name: string, type: 'file', content: string };
-                    file.content = file.content.replace(/%APPDATA%/g, process.env.APPDATA || '');
+                    file = file as { name: string, type: 'file', content: string, validate: (defaultContent: string, content: string) => any };
+                    const replacedContext = file.content.replace(/%APPDATA%/g, (process.env.APPDATA || '').replace(/\\/g, '\\\\'));
 
                     if (!fs.existsSync(filePath)) {
-                        fs.writeFileSync(filePath, file.content, { encoding: 'utf8' });
+                        fs.writeFileSync(filePath, replacedContext, { encoding: 'utf8' });
+                    } else {
+                        file.validate(replacedContext, fs.readFileSync(filePath, { encoding: 'utf8' }));
                     }
+
                     break;
                 case 'directory':
                     file = file as { name: string, type: 'directory' };
