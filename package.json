@@ -4,14 +4,16 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "chcp 65001 && tsc && electron ."
+    "dev": "concurrently \"wait-on http://localhost:11731 && npm run app\" \"cd client && npm run dev\"",
+    "app": "chcp 65001 && tsc && electron ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "electron": "36.2.0",
-    "ts-node-dev": "^2.0.0"
+    "wait-on": "^8.0.3"
   }
 }
