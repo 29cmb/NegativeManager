@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { Controller, ManagerConfiguration } from "../Types";
+import { Controller, ManagerConfiguration, ProfileCreationOptions } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
@@ -24,20 +24,22 @@ export default class BalatroController implements Controller {
             this.LaunchBalatro(Config.Debug.AutolaunchProfile)
         }
 
-        if(Config.Debug.CreateDefaultProfile){
-            const defaultProfileName = Config.Debug.DefaultProfileName
-            const profilePath = this.GetProfile(defaultProfileName)
-
-            if (!profilePath) {
-                this.NewProfile(defaultProfileName)
-                Logging.debug("Created default profile: " + defaultProfileName)
-            } else {
-                Logging.debug("Default profile already exists: " + defaultProfileName)
+        setTimeout(() => {
+            if(Config.Debug.CreateDefaultProfile){
+                const defaultProfileName = Config.Debug.DefaultProfileName
+                const profilePath = this.GetProfile(defaultProfileName)
+        
+                if (!profilePath) {
+                    this.NewProfile(defaultProfileName)
+                    Logging.debug("Created default profile: " + defaultProfileName)
+                } else {
+                    Logging.debug("Default profile already exists: " + defaultProfileName)
+                }
             }
-        }
+        }, 1000)
     }
-
-    public LaunchBalatro(profilePath?: string): void {
+    
+    public async LaunchBalatro(profileName?: string): Promise<void> {
         if (!this.DC) {
             Logging.error("DataController has not yet been initialized. Cannot launch Balatro.")
             return
@@ -57,18 +59,78 @@ export default class BalatroController implements Controller {
 
         Logging.asyncTask("Attempting to launch Balatro with config: " + config)
 
-        const launchPath = profilePath ? profilePath : parsedConfig.balatro_steam_path
+        const launchPath = profileName ? path.join(parsedConfig.profiles_directory, profileName) : parsedConfig.balatro_steam_path
         if(!fs.existsSync(launchPath)) {
             Logging.error("Profile path does not exist: " + launchPath)
             return
         }
 
-        if(!fs.existsSync(path.join(launchPath, "Balatro.exe"))) {
-            Logging.error("Balatro executable not found in profile path: " + launchPath)
+        if(!fs.existsSync(path.join(parsedConfig.balatro_steam_path, "Balatro.exe"))) {
+            Logging.error("Balatro executable not found in steam path: " + launchPath)
+            return
+        }
+
+        if(!fs.existsSync(parsedConfig.balatro_data_path)) {
+            Logging.error("Balatro data path does not exist: " + parsedConfig.balatro_data_path)
             return
         }
 
         Logging.info("Launching Balatro.")
+
+        const dataModPath = path.join(parsedConfig.balatro_data_path, "Mods")
+        if(profileName) {
+            // Load mods into the data path
+            // I might fork lovely to use the Balatro.exe path instead of the data path in the future.
+            
+            if(fs.existsSync(dataModPath)) {
+                if(!fs.existsSync(path.join(dataModPath, ".instance_modpack"))) {
+                    const oldModsPath = path.join(parsedConfig.balatro_data_path, "OldMods" + Date.now());
+                    fs.renameSync(dataModPath, oldModsPath) // Preserves mods that aren't made by the instance manager
+                    fs.mkdirSync(dataModPath, { recursive: true })
+                } else {
+                    fs.readdirSync(dataModPath).forEach(file => {
+                        const filePath = path.join(dataModPath, file);
+                        if (fs.lstatSync(filePath).isDirectory()) {
+                            fs.rmSync(filePath, { recursive: true, force: true });
+                        } else {
+                            fs.unlinkSync(filePath);
+                        }
+                    });
+                }
+            }
+
+            const profileModsPath = path.join(launchPath, "Mods")
+            if(fs.existsSync(profileModsPath)) {
+                fs.readdirSync(profileModsPath).forEach(file => {
+                    const filePath = path.join(profileModsPath, file);
+                    if (fs.lstatSync(filePath).isDirectory()) {
+                        fs.cpSync(filePath, path.join(dataModPath, file), { recursive: true });
+                    } else {
+                        fs.copyFileSync(filePath, path.join(dataModPath, file));
+                    }
+                });
+            }
+
+            const instanceModpackPath = path.join(dataModPath, ".instance_modpack")
+            fs.writeFileSync(instanceModpackPath, "") // doesn't need content
+        }
+
+        const waitForFile = (filePath: string, timeout: number = 5000): Promise<void> => {
+            return new Promise((resolve, reject) => {
+                const start = Date.now();
+                const interval = setInterval(() => {
+                    if (fs.existsSync(filePath)) {
+                        clearInterval(interval);
+                        resolve();
+                    } else if (Date.now() - start > timeout) {
+                        clearInterval(interval);
+                        reject(new Error(`Timeout waiting for file: ${filePath}`));
+                    }
+                }, 100);
+            });
+        };
+
+        await waitForFile(path.join(parsedConfig.balatro_data_path, "Mods", ".instance_modpack"), 2000)
 
         const process = spawn(parsedConfig.balatro_steam_path + "\\Balatro.exe")
         process.on("close", (code) => {
@@ -116,6 +178,11 @@ export default class BalatroController implements Controller {
         }
 
         fs.mkdirSync(profilePath, { recursive: true })
+        fs.readdirSync(clonePath).forEach(file => {
+            fs.copyFileSync(path.join(clonePath, file), path.join(profilePath, file))
+        })
+
+        fs.mkdirSync(path.join(profilePath, "Mods"))
     }
 
     public GetProfile(profileName: string): string | null {

@@ -11,10 +11,8 @@ const defaultFiles = [
             "balatro_data_path": "%APPDATA%\\Balatro",
             "balatro_steam_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Balatro",
             "profiles_directory": "%APPDATA%\\Balatro Instance Manager\\Profiles"
-        }),
+        }, null, 4),
         validate: (defalutContent: string, content: string) => {
-            Logging.debug("Validating config.json...\n\n" + defalutContent + "\n" + content);
-
             const defaultJson = JSON.parse(defalutContent);
             const parsedJson = JSON.parse(content);
 
@@ -84,7 +82,7 @@ export default class DataController implements Controller {
         });
     }
 
-    public GetAppdataFileContents(filePath: string): string|null {
+    public GetAppdataFileContents(filePath: string): string | null {
         const joinedPath = path.join(APPDATA_PATH, filePath);
         if (fs.existsSync(joinedPath)) {
             return fs.readFileSync(joinedPath, { encoding: 'utf8' });

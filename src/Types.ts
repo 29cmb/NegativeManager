@@ -32,3 +32,7 @@ export type ManagerConfiguration = {
     balatro_steam_path: string;
     profiles_directory: string;
 }
+
+export type ProfileCreationOptions = {
+    
+}

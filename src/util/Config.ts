@@ -4,7 +4,7 @@ export default {
     Debug: {
         // Autolaunching
         LaunchBalatroOnStart: true,
-        AutolaunchProfile: undefined,
+        AutolaunchProfile: "Default",
 
         // Default profile
         CreateDefaultProfile: true,
