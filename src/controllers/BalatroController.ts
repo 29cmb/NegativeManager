@@ -1,11 +1,29 @@
 import * as fs from "fs";
-import { Controller, ManagerConfiguration, ProfileCreationOptions } from "../Types";
+import { Controller, ManagerConfiguration } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
 import DataController, { APPDATA_PATH } from "./DataController";
 import { spawn } from "child_process";
 import path from "path";
+import { waitForFile } from "../util/Util";
+
+const ProfileContents = [
+    {
+        name: "Mods",
+        type: "directory",
+    },
+    {
+        name: "profile.json",
+        type: "file",
+        content: JSON.stringify({
+            get DateCreated() {
+                return Date.now()
+            },
+            TimePlayed: 0,
+        }, null, 4)
+    }
+]
 
 export default class BalatroController implements Controller {
     public name: string = "BalatroController";
@@ -20,23 +38,21 @@ export default class BalatroController implements Controller {
             return;
         }
 
+        if(Config.Debug.CreateDefaultProfile){
+            const defaultProfileName = Config.Debug.DefaultProfileName
+            const profilePath = this.GetProfile(defaultProfileName)
+    
+            if (!profilePath) {
+                this.NewProfile(defaultProfileName)
+                Logging.debug("Created default profile: " + defaultProfileName)
+            } else {
+                Logging.debug("Default profile already exists: " + defaultProfileName)
+            }
+        }
+
         if(Config.Debug.LaunchBalatroOnStart) {
             this.LaunchBalatro(Config.Debug.AutolaunchProfile)
         }
-
-        setTimeout(() => {
-            if(Config.Debug.CreateDefaultProfile){
-                const defaultProfileName = Config.Debug.DefaultProfileName
-                const profilePath = this.GetProfile(defaultProfileName)
-        
-                if (!profilePath) {
-                    this.NewProfile(defaultProfileName)
-                    Logging.debug("Created default profile: " + defaultProfileName)
-                } else {
-                    Logging.debug("Default profile already exists: " + defaultProfileName)
-                }
-            }
-        }, 1000)
     }
     
     public async LaunchBalatro(profileName?: string): Promise<void> {
@@ -115,21 +131,6 @@ export default class BalatroController implements Controller {
             fs.writeFileSync(instanceModpackPath, "") // doesn't need content
         }
 
-        const waitForFile = (filePath: string, timeout: number = 5000): Promise<void> => {
-            return new Promise((resolve, reject) => {
-                const start = Date.now();
-                const interval = setInterval(() => {
-                    if (fs.existsSync(filePath)) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (Date.now() - start > timeout) {
-                        clearInterval(interval);
-                        reject(new Error(`Timeout waiting for file: ${filePath}`));
-                    }
-                }, 100);
-            });
-        };
-
         await waitForFile(path.join(parsedConfig.balatro_data_path, "Mods", ".instance_modpack"), 2000)
 
         const process = spawn(parsedConfig.balatro_steam_path + "\\Balatro.exe")
@@ -182,7 +183,16 @@ export default class BalatroController implements Controller {
             fs.copyFileSync(path.join(clonePath, file), path.join(profilePath, file))
         })
 
-        fs.mkdirSync(path.join(profilePath, "Mods"))
+        ProfileContents.forEach(file => {
+            const filePath = path.join(profilePath, file.name)
+            if (file.type === "directory") {
+                file = file as { name: string, type: "directory" }
+                fs.mkdirSync(filePath, { recursive: true })
+            } else if (file.type === "file") {
+                file = file as { name: string, type: "file", content: string }
+                fs.writeFileSync(filePath, file.content)
+            }
+        })
     }
 
     public GetProfile(profileName: string): string | null {
