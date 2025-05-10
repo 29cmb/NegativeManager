@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { Controller, ManagerConfiguration, ProfileCreationOptions } from "../Types";
+import { Controller, ManagerConfiguration } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
