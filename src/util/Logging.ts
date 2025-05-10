@@ -8,6 +8,7 @@ const messages = {
     [LogLevel.ERROR]: '❌ | %s',
     [LogLevel.DEBUG]: '🛠️  | %s', // requires an extra space for whatever reason
     [LogLevel.BOOTING]: '🚀 | %s',
+    [LogLevel.ASYNC_TASK]: '⏳ | %s',
     [LogLevel.OTHER]: '%s',
 }
 
@@ -30,6 +31,7 @@ const warning = (message: string) => log(message, LogLevel.WARNING);
 const error = (message: string) => log(message, LogLevel.ERROR);
 const debug = (message: string) => log(message, LogLevel.DEBUG);
 const booting = (message: string) => log(message, LogLevel.BOOTING);
+const asyncTask = (message: string) => log(message, LogLevel.ASYNC_TASK);
 const other = (message: string) => log(message, LogLevel.OTHER);
 
 export default {
@@ -41,5 +43,6 @@ export default {
     error,
     debug,
     booting,
+    asyncTask,
     other
 }

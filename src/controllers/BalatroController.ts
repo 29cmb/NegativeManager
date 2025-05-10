@@ -1,9 +1,11 @@
-import { Controller } from "../Types";
+import * as fs from "fs";
+import { Controller, ManagerConfiguration } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
 import DataController from "./DataController";
-
+import { spawn } from "child_process";
+import path from "path";
 
 export default class BalatroController implements Controller {
     public name: string = "BalatroController";
@@ -19,24 +21,50 @@ export default class BalatroController implements Controller {
         }
 
         if(Config.Debug.LaunchBalatroOnStart) {
-            this.LaunchBalatro()
+            this.LaunchBalatro(Config.Debug.AutolaunchProfile)
         }
     }
 
     public LaunchBalatro(profilePath?: string): void {
-        Logging.info("Launching Balatro...")
-
         if (!this.DC) {
-            Logging.error("DataController has not yet been initialized. Cannot launch Balatro.");
-            return;
+            Logging.error("DataController has not yet been initialized. Cannot launch Balatro.")
+            return
         }
 
         const config = this.DC.GetAppdataFileContents("config.json")
         if (!config) {
-            Logging.error("Config file not found. Cannot launch Balatro.");
-            return;
+            Logging.error("Config file not found. Cannot launch Balatro.")
+            return
         }
 
-        Logging.info("Launching Balatro with config: " + config)
+        const parsedConfig: ManagerConfiguration = JSON.parse(config);
+        if (!parsedConfig) {
+            Logging.error("Failed to parse config file. Cannot launch Balatro.")
+            return
+        }
+
+        Logging.asyncTask("Attempting to launch Balatro with config: " + config)
+
+        const launchPath = profilePath ? profilePath : parsedConfig.balatro_steam_path
+        if(!fs.existsSync(launchPath)) {
+            Logging.error("Profile path does not exist: " + launchPath)
+            return
+        }
+
+        if(!fs.existsSync(path.join(launchPath, "Balatro.exe"))) {
+            Logging.error("Balatro executable not found in profile path: " + launchPath)
+            return
+        }
+
+        Logging.info("Launching Balatro.")
+
+        const process = spawn(parsedConfig.balatro_steam_path + "\\Balatro.exe")
+        process.on("close", (code) => {
+            if (code !== 0) {
+                Logging.error("Balatro process exited with code: " + code)
+            } else {
+                Logging.success("Balatro process exited successfully.")
+            }
+        })
     }
 }
