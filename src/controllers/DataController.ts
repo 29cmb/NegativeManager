@@ -47,7 +47,7 @@ export default class DataController implements Controller {
     public description: string = "Controller for managing data such as settings.";
     public version: string = "1.0.0";
 
-    public init(): void {
+    public async init(): Promise<void> {
         if (!fs.existsSync(APPDATA_PATH)) {
             fs.mkdirSync(APPDATA_PATH, { recursive: true });
         }

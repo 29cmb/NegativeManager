@@ -178,11 +178,11 @@ export default class BalatroController implements Controller {
         ProfileContents.forEach(file => {
             const filePath = path.join(profilePath, file.name)
             if (file.type === "directory") {
-                file = file as { name: string, type: "directory" }
-                fs.mkdirSync(filePath, { recursive: true })
+                const newFile = file as { name: string, type: "directory" }
+                fs.mkdirSync(newFile.name, { recursive: true })
             } else if (file.type === "file") {
-                file = file as { name: string, type: "file", content: string }
-                fs.writeFileSync(filePath, file.content)
+                const newFile = file as { name: string, type: "file", content: string }
+                fs.writeFileSync(filePath, newFile.content)
             }
         })
     }

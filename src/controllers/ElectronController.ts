@@ -10,7 +10,7 @@ export default class ElectronController implements Controller {
 
     private mainWindow: BrowserWindow | null = null;
 
-    public init(): void {
+    public async init(): Promise<void> {
         app.whenReady().then(() => {
             this.createWindow()
         

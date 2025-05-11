@@ -14,7 +14,7 @@ export interface Controller {
     name: string;
     description: string;
     version: string;
-    init(): void;
+    init(): Promise<void>;
 }
 
 export type BackendConfiguration = {

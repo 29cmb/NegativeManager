@@ -3,8 +3,8 @@ import { BackendConfiguration } from "../Types";
 export default {
     Debug: {
         // Autolaunching
-        LaunchBalatroOnStart: false,
-        AutolaunchProfile: "Default",
+        LaunchBalatroOnStart: true,
+        AutolaunchProfile: "Cryptid",
 
         // Default profile
         CreateDefaultProfile: false,

@@ -12,17 +12,13 @@ const registerControllers = () => {
         if (file.endsWith(".ts") || file.endsWith(".js")) {
             const controller: Controller = new ((await import(`../controllers/${file}`)).default)
             Logging.packageRegistration(`Registering controller ${controller.name} (v${controller.version})`)
-            try {
-                if (controllers[controller.name]) {
-                    Logging.warning(`Controller ${controller.name} is already registered.`)
-                    return
-                }
-
-                controller.init()
-                controllers[controller.name] = controller
-            } catch(e) {
-                Logging.error(`Error registering controller ${controller.name}: ${e}`)
+            if (controllers[controller.name]) {
+                Logging.warning(`Controller ${controller.name} is already registered.`)
+                return
             }
+
+            controller.init()
+            controllers[controller.name] = controller
         } else {
             Logging.warning(`File ${file} is not a controller`)
         }
