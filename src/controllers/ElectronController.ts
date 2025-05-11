@@ -31,7 +31,7 @@ export default class ElectronController implements Controller {
     protected createWindow(): void {
         Logging.info("Creating main window...")
         this.mainWindow = new BrowserWindow({
-            width: 800,
+            width: 1200,
             height: 600,
             title: "Balatro Instance Manager",
         })
