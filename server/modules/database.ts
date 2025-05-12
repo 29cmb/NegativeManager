@@ -24,10 +24,13 @@ const data = {
 
             // database setup
             this.databases.accounts = client.db(process.env.ACCOUNTS_DATABASE || "Accounts");
+            this.databases.mods = client.db(process.env.MODS_DATABASE || "Mods");
 
             // collections setup
             this.collections.users = this.databases.accounts.collection(process.env.USERS_COLLECTION || "Users");
             this.collections.sessions = this.databases.accounts.collection(process.env.SESSIONS_COLLECTION || "Sessions");
+
+            this.collections.catalog = this.databases.mods.collection(process.env.CATALOG_COLLECTION || "Catalog");
 
             // initialize methods
             this.methods.signup = async (email: string, username: string, password: string): Promise<{status: number, response: {success: boolean, message: string}}> => {
@@ -40,7 +43,10 @@ const data = {
                     email,
                     username,
                     password: (await argon2encrypt(password)), // don't forget this, pretty important
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    verified: false,
+                    submission_ban: false,
+                    level: 0
                 }).catch((err) => {
                     console.error("❌ | Error inserting user into database:", err);
                     return { status: 500, response: { success: false, message: "Error inserting user into database" } };
@@ -66,6 +72,20 @@ const data = {
 
                 req.session.user = user.$id
                 return { status: 200, response: { success: true, message: "Login successful" } };
+            }
+
+            this.methods.submit = async (req: Request & {session: {user: string}}, name: string, description: string, icon: string, dependancies: string[], github_release_link: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+                const existingMod = await this.collections.catalog.findOne({ name, author: req.session.user })
+                if(existingMod) {
+                    return { status: 409, response: { success: false, message: "You already have a mod of the same name" } };
+                }
+
+                const user = await this.methods.getUser(req.session.user);
+                if(!user || user.submission_ban) {
+                    return { status: 401, response: { success: false, message: "You are banned from submitting mods" } };
+                }
+
+                return { status: 200, response: { success: true, message: "Mod submitted successfully" } }
             }
 
             await this.databases.accounts.command({ ping: 1 });
