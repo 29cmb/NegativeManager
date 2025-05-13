@@ -55,12 +55,16 @@ const data = {
                 return { status: 200, response: { success: true, message: "User created successfully" } };
             }
 
-            this.methods.getUser = async (username: string) => {
+            this.methods.GetUserFromUsername = async (username: string) => {
                 return data.collections.users.findOne({ username });
             }
 
+            this.methods.getUser = async (id: string) => {
+                return data.collections.users.findOne({ $id: id });
+            }
+
             this.methods.login = async (req: Request & {session: {user: string}}, username: string, password: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
-                const user = await data.methods.getUser(username);
+                const user = await data.methods.GetUserFromUsername(username);
                 if (!user) {
                     return { status: 401, response: { success: false, message: "Invalid username or password" } };
                 }
