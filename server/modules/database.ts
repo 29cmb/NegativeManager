@@ -85,12 +85,56 @@ const data = {
                     return { status: 401, response: { success: false, message: "You are banned from submitting mods" } };
                 }
 
+                // Hey me! Maybe don't forge to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
+                await this.collections.catalog.insertOne({
+                    name,
+                    description,
+                    icon,
+                    dependancies,
+                    github_release_link,
+                    approved: user.level > 0
+                }).catch((err) => {
+                    console.error("❌ | Error inserting mod into database:", err);
+                    return { status: 500, response: { success: false, message: "Error inserting mod into database" } };
+                })
+
                 return { status: 200, response: { success: true, message: "Mod submitted successfully" } }
             }
 
-            await this.databases.accounts.command({ ping: 1 });
+            this.methods.ChangeModApprovalStatus = async (req: Request & {session: {user: string}}, id: string, status: boolean) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+                const user = this.methods.getUser(req.session.user);
+                if(!user || user.level < 1) {
+                    return { 
+                        status: 403, 
+                        response: {
+                            success: false,
+                            message: "You do not have permission to accept mods",
+                        }
+                    };
+                }
+
+                const mod = await this.collections.catalog.findOne({ $id: id });
+                if(!mod) {
+                    return { status: 404, response: { success: false, message: "Mod not found" } };
+                }
+
+                if(mod.approved === status) {
+                    return { status: 409, response: { success: false, message: "Mod already has that approval status" } };
+                }
+
+                await this.collections.catalog.updateOne({ $id: id }, { $set: { approved: status } }).catch((err) => {
+                    console.error("❌ | Error updating mod approval status:", err);
+                    return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
+                })
+
+                return { status: 200, response: { success: true, message: "Mod approval status changed successfully" } }
+            }
+
+            await this.databases.accounts.command({ ping: 1 })
             console.log("🏓 | Pinged accounts database")
-            console.log("🚀 | Connected to MongoDB");
+            await this.databases.mods.command({ ping: 1 })
+            console.log("🏓 | Pinged mods database")
+            console.log("🚀 | Connected to MongoDB")
         } catch (error) {
             console.error("❌ | Error connecting to MongoDB:", error);
             throw error;
