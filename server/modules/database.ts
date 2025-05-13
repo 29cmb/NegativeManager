@@ -1,4 +1,4 @@
-import { Collection, Db, MongoClient, ServerApiVersion } from "mongodb";
+import { Collection, Db, MongoClient, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import { Request } from "express"
 
@@ -132,6 +132,26 @@ const data = {
                 })
 
                 return { status: 200, response: { success: true, message: "Mod approval status changed successfully" } }
+            }
+
+            this.methods.GetModQueue = async (req: Request & {session: {user: string}}) : Promise<{status: number, response: {[key: string]: any}}> => {
+                const user = await this.methods.getUser(req.session.user);
+                if(!user || user.level < 1) {
+                    return { 
+                        status: 403, 
+                        response: {
+                            success: false,
+                            message: "You do not have permission to view the mod queue",
+                        }
+                    };
+                }
+
+                const mods = await this.collections.catalog.find({ approved: false }).toArray();
+                if(!mods) {
+                    return { status: 404, response: { success: false, message: "No mods found" } };
+                }
+
+                return { status: 200, response: { success: true, message: "Mod queue retrieved successfully", mods } }
             }
 
             await this.databases.accounts.command({ ping: 1 })
