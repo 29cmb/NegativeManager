@@ -154,6 +154,41 @@ const data = {
                 return { status: 200, response: { success: true, message: "Mod queue retrieved successfully", mods } }
             }
 
+            this.methods.SubmissionBan = async (req: Request & {session: {user: string}}, id: string, status: boolean): Promise<{status: number, response: {success: boolean, message: string}}> => {
+                const user = await this.methods.getUser(req.session.user);
+                if(!user || user.level < 1) {
+                    return { 
+                        status: 403, 
+                        response: {
+                            success: false,
+                            message: "You do not have permission to manage the ban status of users",
+                        }
+                    };
+                }
+
+                const targetUser = await this.methods.getUser(id);
+                if(!targetUser) {
+                    return { status: 404, response: { success: false, message: "User not found" } };
+                }
+
+                if(targetUser.level >= user.level) {
+                    return { status: 403, response: { success: false, message: "You cannot ban this user" } };
+                }
+
+                this.collections.users.updateOne({ $id: id }, { $set: { submission_ban: status } }).catch((err) => {
+                    console.error("❌ | Error updating user submission ban status:", err);
+                    return { status: 500, response: { success: false, message: "Error updating user submission ban status" } };
+                })
+
+                return {
+                    status: 200,
+                    response: {
+                        success: true,
+                        message: "User submission ban status changed successfully",
+                    }
+                }
+            }
+
             await this.databases.accounts.command({ ping: 1 })
             console.log("🏓 | Pinged accounts database")
             await this.databases.mods.command({ ping: 1 })
