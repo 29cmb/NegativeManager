@@ -4,3 +4,6 @@ node_modules
 dist
 out
 build
+
+# If I have no idea what the hell im doing, i create a notebook and test it in there.
+*.ipynb

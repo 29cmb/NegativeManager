@@ -230,29 +230,34 @@ const data = {
 
                     return { status: 200, response: { success: true, message: "Mod approval status changed successfully" } }
                 } catch (err) {
-                    console.error("❌ | Error in submit method:", err);
+                    console.error("❌ | Error in ChangeModApprovalStatus method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }
 
             this.methods.GetModQueue = async (req: Request & {session: {user: string}}) : Promise<{status: number, response: {[key: string]: any}}> => {
-                const user = await this.methods.getUser(req.session.user);
-                if(!user || user.level < 1) {
-                    return { 
-                        status: 403, 
-                        response: {
-                            success: false,
-                            message: "You do not have permission to view the mod queue",
-                        }
-                    };
+                try {
+                    const user = await this.methods.getUser(req.session.user);
+                    if(!user || user.level < 1) {
+                        return { 
+                            status: 403, 
+                            response: {
+                                success: false,
+                                message: "You do not have permission to view the mod queue",
+                            }
+                        };
+                    }
+    
+                    const mods = await this.collections.catalog.find({ updateApprovalPending: true }).toArray();
+                    if(!mods) {
+                        return { status: 404, response: { success: false, message: "No mods found" } };
+                    }
+    
+                    return { status: 200, response: { success: true, message: "Mod queue retrieved successfully", mods } }
+                } catch(err) {
+                    console.error("❌ | Error in GetModQueue method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
-
-                const mods = await this.collections.catalog.find({ approved: false }).toArray();
-                if(!mods) {
-                    return { status: 404, response: { success: false, message: "No mods found" } };
-                }
-
-                return { status: 200, response: { success: true, message: "Mod queue retrieved successfully", mods } }
             }
 
             this.methods.SubmissionBan = async (req: Request & {session: {user: string}}, id: string, status: boolean): Promise<{status: number, response: {success: boolean, message: string}}> => {
@@ -276,18 +281,18 @@ const data = {
                     return { status: 403, response: { success: false, message: "You cannot ban this user" } };
                 }
 
-                this.collections.users.updateOne({ $id: id }, { $set: { submission_ban: status } }).catch((err) => {
+                return await this.collections.users.updateOne({ $id: id }, { $set: { submission_ban: status } }).then(() => {
+                    return {
+                        status: 200,
+                        response: {
+                            success: true,
+                            message: "User submission ban status changed successfully",
+                        }
+                    }
+                }).catch((err) => {
                     console.error("❌ | Error updating user submission ban status:", err);
                     return { status: 500, response: { success: false, message: "Error updating user submission ban status" } };
                 })
-
-                return {
-                    status: 200,
-                    response: {
-                        success: true,
-                        message: "User submission ban status changed successfully",
-                    }
-                }
             }
 
             await this.databases.accounts.command({ ping: 1 })
