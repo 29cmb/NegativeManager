@@ -4,7 +4,6 @@ import database from "../modules/database";
 const githubReleaseRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/;
 const githubSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)(?:\.git)?$/;
 
-// TODO: Test this endpoint, unable to store cookies in postman
 export default (app: Express) => {
     app.post(
         "/api/v1/mods/submit",
@@ -54,6 +53,25 @@ export default (app: Express) => {
                     message: "Required fields not provided or not formatted properly",
                 });
                 return;
+            }
+
+            const releaseMatch = githubReleaseRegex.exec(github_release_link)
+            const sourceMatch = githubSourceRegex.exec(source_code)
+            if (!releaseMatch || !sourceMatch) {
+                res.status(400).json({
+                    success: false,
+                    message: "Invalid GitHub URLs provided",
+                })
+                return
+            }
+            const [, releaseOwner, releaseRepo] = releaseMatch
+            const [, sourceOwner, sourceRepo] = sourceMatch
+            if (releaseOwner !== sourceOwner || releaseRepo !== sourceRepo) {
+                res.status(400).json({
+                    success: false,
+                    message: "Release and source code must be from the same GitHub repository",
+                })
+                return
             }
 
             if (!req.session?.user) {

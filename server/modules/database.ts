@@ -81,124 +81,158 @@ const data = {
             }
 
             this.methods.submit = async (req: Request & {session: {user: string}}, name: string, description: string, icon: string, dependencies: string[], source_code: string, github_release_link: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
-                const existingMod = await this.collections.catalog.findOne({ name, author: req.session.user })
-                if(existingMod) {
-                    return { status: 409, response: { success: false, message: "You already have a mod of the same name" } };
-                }
-
-                const user = await this.methods.getUser(req.session.user);
-                if(!user || user.submission_ban) {
-                    return { status: 401, response: { success: false, message: "You are banned from submitting mods" } };
-                }
-
-                dependencies.forEach(dep => {
-                    const mod = this.collections.catalog.findOne({ $id: dep });
-                    if(!mod) {
-                        return { status: 400, response: { success: false, message: "Invalid dependency table" } };
+                try {
+                    const existingMod = await this.collections.catalog.findOne({ name, author: req.session.user })
+                    if(existingMod) {
+                        return { status: 409, response: { success: false, message: "You already have a mod of the same name" } }
                     }
-                })
 
-                const match = github_release_link.match(/^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/);
-
-                if (!match) {
-                    return { status: 400, response: { success: false, message: "Invalid GitHub release link" } };
-                }
-                
-                const [_, owner, repo, tag] = match;
-
-                if(!tag) {
-                    return { status: 400, response: { success: false, message: "Invalid GitHub release link" } };
-                }
-
-                var releaseInfo: any;
-
-                await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`, {
-                    headers: { "Accept": "application/vnd.github+json" }
-                }).then((response) => {
-                    releaseInfo = response.data;
-                }).catch((err) => {
-                    switch(err.response.status) {
-                        case 404:
-                            return { status: 400, response: { success: false, message: "Release not found" } };
-                        case 403:
-                            return { status: 400, response: { success: false, message: "Rate limit exceeded" } };
-                        case 500:
-                            return { status: 500, response: { success: false, message: "GitHub API error" } };
-                        default:
-                            return { status: 500, response: { success: false, message: "Unknown error" } };
+                    const user = await this.methods.getUser(req.session.user)
+                    if(!user || user.submission_ban) {
+                        return { status: 401, response: { success: false, message: "You are banned from submitting mods" } }
                     }
-                });
 
-                var checksum;
-                await axios.get(releaseInfo.zipball_url, {
-                    responseType: "arraybuffer"
-                }).then((response) => {
-                    const hash = crypto.createHash('sha256');
-                    hash.update(response.data);
-                    checksum = hash.digest('hex');
-                }).catch((err) => {
-                    console.error("❌ | Error calculating checksum:", err);
-                    return { status: 500, response: { success: false, message: "Error calculating checksum" } };
-                })
-
-                // Hey me! Maybe don't forge to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
-                await this.collections.catalog.insertOne({
-                    name,
-                    description,
-                    icon,
-                    dependencies,
-                    author: req.session.user,
-                    source_code,
-                    updateApprovalPending: true,
-                    initiallyApproved: false,
-                    downloads: 0,
-                    favorites: 0,
-                    releases: [
-                        {
-                            name: releaseInfo.name,
-                            body: releaseInfo.body,
-                            tag: releaseInfo.tag_name,
-                            url: releaseInfo.zipball_url,
-                            created_at: releaseInfo.published_at,
-                            checksum,
-                            approved: false
+                    for (const dep of dependencies) {
+                        const mod = await this.collections.catalog.findOne({ $id: dep });
+                        if(!mod) {
+                            return { status: 400, response: { success: false, message: "Invalid dependency table" } }
                         }
-                    ]
-                }).catch((err) => {
-                    console.error("❌ | Error inserting mod into database:", err);
-                    return { status: 500, response: { success: false, message: "Error inserting mod into database" } };
-                })
+                    }
 
-                return { status: 200, response: { success: true, message: "Mod submitted successfully" } }
+                    const match = github_release_link.match(/^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/)
+                    if (!match) {
+                        return { status: 400, response: { success: false, message: "Invalid GitHub release link" } }
+                    }
+
+                    const [_, owner, repo, tag] = match
+                    if(!tag) {
+                        return { status: 400, response: { success: false, message: "Invalid GitHub release link" } }
+                    }
+
+                    let releaseInfo;
+                    try {
+                        const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`, {
+                            headers: { "Accept": "application/vnd.github+json" }
+                        });
+                        releaseInfo = response.data
+                    } catch (err: any) {
+                        switch(err?.response?.status) {
+                            case 404:
+                                return { status: 400, response: { success: false, message: "Release not found" } }
+                            case 403:
+                                return { status: 400, response: { success: false, message: "Rate limit exceeded" } }
+                            case 500:
+                                return { status: 500, response: { success: false, message: "GitHub API error" } }
+                            default:
+                                return { status: 500, response: { success: false, message: "Unknown error" } }
+                        }
+                    }
+
+                    let checksum;
+                    try {
+                        const response = await axios.get(releaseInfo.zipball_url, { responseType: "arraybuffer" })
+                        const hash = crypto.createHash('sha256')
+                        hash.update(response.data)
+                        checksum = hash.digest('hex')
+                    } catch (err) {
+                        console.error("❌ | Error calculating checksum:", err)
+                        return { status: 500, response: { success: false, message: "Error calculating checksum" } }
+                    }
+
+                    // Hey me! Maybe don't forge to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
+                    await this.collections.catalog.insertOne({
+                        name,
+                        description,
+                        icon,
+                        dependencies,
+                        author: req.session.user,
+                        source_code,
+                        updateApprovalPending: true,
+                        initiallyApproved: false,
+                        downloads: 0,
+                        favorites: 0,
+                        releases: [
+                            {
+                                name: releaseInfo.name,
+                                body: releaseInfo.body,
+                                tag: releaseInfo.tag_name,
+                                url: releaseInfo.zipball_url,
+                                created_at: releaseInfo.published_at,
+                                checksum,
+                                approved: false
+                            }
+                        ]
+                    });
+
+                    return { status: 200, response: { success: true, message: "Mod submitted successfully" } };
+                } catch (err) {
+                    console.error("❌ | Error in submit method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
             }
 
-            this.methods.ChangeModApprovalStatus = async (req: Request & {session: {user: string}}, id: string, status: boolean) : Promise<{status: number, response: {success: boolean, message: string}}> => {
-                const user = this.methods.getUser(req.session.user);
-                if(!user || user.level < 1) {
-                    return { 
-                        status: 403, 
-                        response: {
-                            success: false,
-                            message: "You do not have permission to accept mods",
+            this.methods.ChangeModApprovalStatus = async (req: Request & {session: {user: string}}, id: string, tag: string, status: boolean) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+                try {
+                    const user = await this.methods.getUser(req.session.user);
+                    if(!user || user.level < 1) {
+                        return { 
+                            status: 403, 
+                            response: {
+                                success: false,
+                                message: "You do not have permission to accept mods",
+                            }
+                        };
+                    }
+
+                    const mod = await this.collections.catalog.findOne({ $id: id });
+                    if(!mod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } };
+                    }
+
+                    // if(mod.approved === status) {
+                    //     return { status: 409, response: { success: false, message: "Mod already has that approval status" } };
+                    // }
+
+                    // await this.collections.catalog.updateOne({ $id: id }, { $set: { approved: status } }).catch((err) => {
+                    //     console.error("❌ | Error updating mod approval status:", err);
+                    //     return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
+                    // })
+
+                    const release = mod.releases.find((release: any) => release.tag === tag);
+                    if(!release) {
+                        return { status: 404, response: { success: false, message: "Release not found" } };
+                    }
+
+                    if(release.approved === status) {
+                        return { status: 409, response: { success: false, message: "Release already has that approval status" } };
+                    }
+
+                    const result = await this.collections.catalog.findOneAndUpdate(
+                        { $id: id, "releases.tag": tag }, 
+                        { $set: { "releases.$.approved": status } },
+                        { returnDocument: "after" }
+                    )
+
+                    if(!result || !result.value) {
+                        console.error("❌ | Error updating release tag")
+                        return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
+                    }
+
+                    await this.collections.catalog.updateOne(
+                        { $id: id },
+                        { $set: 
+                            { 
+                                updateApprovalPending: result.value.releases.some((release: {approved: boolean}) => release.approved === false),
+                                initiallyApproved: !result.value.releases.some((release: {approved: boolean}) => release.approved === true)
+                            }
                         }
-                    };
+                    )
+
+                    return { status: 200, response: { success: true, message: "Mod approval status changed successfully" } }
+                } catch (err) {
+                    console.error("❌ | Error in submit method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
-
-                const mod = await this.collections.catalog.findOne({ $id: id });
-                if(!mod) {
-                    return { status: 404, response: { success: false, message: "Mod not found" } };
-                }
-
-                if(mod.approved === status) {
-                    return { status: 409, response: { success: false, message: "Mod already has that approval status" } };
-                }
-
-                await this.collections.catalog.updateOne({ $id: id }, { $set: { approved: status } }).catch((err) => {
-                    console.error("❌ | Error updating mod approval status:", err);
-                    return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
-                })
-
-                return { status: 200, response: { success: true, message: "Mod approval status changed successfully" } }
             }
 
             this.methods.GetModQueue = async (req: Request & {session: {user: string}}) : Promise<{status: number, response: {[key: string]: any}}> => {

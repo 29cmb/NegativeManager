@@ -6,11 +6,17 @@ export default (app: Express) => {
     app.post("/api/v1/mods/accept", async (req: Request & {
         session?: { user?: string };
         body: {
-            id: string;
+            mod: string
+            tag: string,
         };
     }, res) => {
-        const { id } = req.body;
-        if (id === undefined || typeof id !== "string") {
+        const { mod, tag } = req.body;
+        if (
+            mod === undefined 
+            || tag === undefined
+            || typeof mod !== "string"
+            || typeof tag !== "string"
+        ) {
             res.status(400).json({
                 success: false,
                 message: "Required fields not provided or not formatted properly",
@@ -28,7 +34,8 @@ export default (app: Express) => {
 
         database.methods.ChangeModApprovalStatus(
             req,
-            id,
+            mod,
+            tag,
             true
         ).then((result: { status: number, response: { success: boolean, message: string } }) => {
             res.status(result.status).json(result.response);
