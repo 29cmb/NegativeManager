@@ -1,7 +1,8 @@
 import { Express, Request, Response } from "express";
 import database from "../modules/database";
 
-const githubReleaseSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/archive\/refs\/tags\/(.+?)\.(zip|tar\.gz)$/;
+const githubReleaseRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/;
+const githubSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)(?:\.git)?$/;
 
 // TODO: Test this endpoint, unable to store cookies in postman
 export default (app: Express) => {
@@ -14,7 +15,8 @@ export default (app: Express) => {
                     name: string;
                     description: string;
                     icon: string;
-                    dependancies: string[];
+                    dependencies: string[];
+                    source_code: string;
                     github_release_link: string;
                 };
             },
@@ -24,23 +26,28 @@ export default (app: Express) => {
                 name,
                 description,
                 icon,
-                dependancies,
-                github_release_link,
+                dependencies,
+                source_code,
+                github_release_link
             } = req.body;
 
             if (
                 name === undefined
                 || description === undefined
                 || icon === undefined
-                || dependancies === undefined
+                || dependencies === undefined
+                || source_code === undefined
                 || github_release_link === undefined
                 || typeof name !== "string"
                 || typeof description !== "string"
                 || typeof icon !== "string"
-                || !Array.isArray(dependancies)
-                || dependancies.some((dep: any) => typeof dep !== "string")
+                || typeof source_code !== "string"
                 || typeof github_release_link !== "string"
-                || !githubReleaseSourceRegex.test(github_release_link)
+                || !Array.isArray(dependencies)
+                || !icon.startsWith("data:image/")
+                || dependencies.some((dep: any) => typeof dep !== "string")
+                || !githubSourceRegex.test(source_code)
+                || !githubReleaseRegex.test(github_release_link)
             ) {
                 res.status(400).json({
                     success: false,
@@ -62,7 +69,8 @@ export default (app: Express) => {
                 name,
                 description,
                 icon,
-                dependancies,
+                dependencies,
+                source_code,
                 github_release_link
             ).then((result: { status: number; response: { success: boolean; message: string } }) => {
                 res.status(result.status).json(result.response);

@@ -1,6 +1,8 @@
 import { Collection, Db, MongoClient, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import { Request } from "express"
+import axios from "axios"
+import crypto from "crypto"
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -78,7 +80,7 @@ const data = {
                 return { status: 200, response: { success: true, message: "Login successful" } };
             }
 
-            this.methods.submit = async (req: Request & {session: {user: string}}, name: string, description: string, icon: string, dependancies: string[], github_release_link: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.submit = async (req: Request & {session: {user: string}}, name: string, description: string, icon: string, dependencies: string[], source_code: string, github_release_link: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
                 const existingMod = await this.collections.catalog.findOne({ name, author: req.session.user })
                 if(existingMod) {
                     return { status: 409, response: { success: false, message: "You already have a mod of the same name" } };
@@ -89,14 +91,79 @@ const data = {
                     return { status: 401, response: { success: false, message: "You are banned from submitting mods" } };
                 }
 
+                dependencies.forEach(dep => {
+                    const mod = this.collections.catalog.findOne({ $id: dep });
+                    if(!mod) {
+                        return { status: 400, response: { success: false, message: "Invalid dependency table" } };
+                    }
+                })
+
+                const match = github_release_link.match(/^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/);
+
+                if (!match) {
+                    return { status: 400, response: { success: false, message: "Invalid GitHub release link" } };
+                }
+                
+                const [_, owner, repo, tag] = match;
+
+                if(!tag) {
+                    return { status: 400, response: { success: false, message: "Invalid GitHub release link" } };
+                }
+
+                var releaseInfo: any;
+
+                await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`, {
+                    headers: { "Accept": "application/vnd.github+json" }
+                }).then((response) => {
+                    releaseInfo = response.data;
+                }).catch((err) => {
+                    switch(err.response.status) {
+                        case 404:
+                            return { status: 400, response: { success: false, message: "Release not found" } };
+                        case 403:
+                            return { status: 400, response: { success: false, message: "Rate limit exceeded" } };
+                        case 500:
+                            return { status: 500, response: { success: false, message: "GitHub API error" } };
+                        default:
+                            return { status: 500, response: { success: false, message: "Unknown error" } };
+                    }
+                });
+
+                var checksum;
+                await axios.get(releaseInfo.zipball_url, {
+                    responseType: "arraybuffer"
+                }).then((response) => {
+                    const hash = crypto.createHash('sha256');
+                    hash.update(response.data);
+                    checksum = hash.digest('hex');
+                }).catch((err) => {
+                    console.error("❌ | Error calculating checksum:", err);
+                    return { status: 500, response: { success: false, message: "Error calculating checksum" } };
+                })
+
                 // Hey me! Maybe don't forge to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
                 await this.collections.catalog.insertOne({
                     name,
                     description,
                     icon,
-                    dependancies,
-                    github_release_link,
-                    approved: user.level > 0
+                    dependencies,
+                    author: req.session.user,
+                    source_code,
+                    updateApprovalPending: true,
+                    initiallyApproved: false,
+                    downloads: 0,
+                    favorites: 0,
+                    releases: [
+                        {
+                            name: releaseInfo.name,
+                            body: releaseInfo.body,
+                            tag: releaseInfo.tag_name,
+                            url: releaseInfo.zipball_url,
+                            created_at: releaseInfo.published_at,
+                            checksum,
+                            approved: false
+                        }
+                    ]
                 }).catch((err) => {
                     console.error("❌ | Error inserting mod into database:", err);
                     return { status: 500, response: { success: false, message: "Error inserting mod into database" } };
