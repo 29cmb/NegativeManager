@@ -65,6 +65,10 @@ const data = {
                 return data.collections.users.findOne({ $id: id });
             }
 
+            this.methods.GetMod = async (id: string) => {
+                return data.collections.catalog.findOne({ $id: id })
+            }
+
             this.methods.login = async (req: Request & {session: {user: string}}, username: string, password: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
                 const user = await data.methods.GetUserFromUsername(username);
                 if (!user) {
@@ -93,7 +97,7 @@ const data = {
                     }
 
                     for (const dep of dependencies) {
-                        const mod = await this.collections.catalog.findOne({ $id: dep });
+                        const mod = await this.methods.GetMod(dep);
                         if(!mod) {
                             return { status: 400, response: { success: false, message: "Invalid dependency table" } }
                         }
@@ -139,16 +143,16 @@ const data = {
                         return { status: 500, response: { success: false, message: "Error calculating checksum" } }
                     }
 
-                    // Hey me! Maybe don't forge to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
+                    // Hey me! Maybe don't forget to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
                     await this.collections.catalog.insertOne({
                         name,
                         description,
                         icon,
-                        dependencies,
                         author: req.session.user,
                         source_code,
                         updateApprovalPending: true,
-                        initiallyApproved: false,
+                        approved: false,
+                        reviewed: false,
                         downloads: 0,
                         favorites: 0,
                         releases: [
@@ -157,9 +161,11 @@ const data = {
                                 body: releaseInfo.body,
                                 tag: releaseInfo.tag_name,
                                 url: releaseInfo.zipball_url,
+                                dependencies,
                                 created_at: releaseInfo.published_at,
                                 checksum,
-                                approved: false
+                                approved: false,
+                                reviewed: false
                             }
                         ]
                     });
@@ -171,7 +177,7 @@ const data = {
                 }
             }
 
-            this.methods.ChangeModApprovalStatus = async (req: Request & {session: {user: string}}, id: string, tag: string, status: boolean) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.ChangeModApprovalStatus = async (req: Request & {session: {user: string}}, id: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
                 try {
                     const user = await this.methods.getUser(req.session.user);
                     if(!user || user.level < 1) {
@@ -184,7 +190,34 @@ const data = {
                         };
                     }
 
-                    const mod = await this.collections.catalog.findOne({ $id: id });
+                    const mod = await this.methods.GetMod(id)
+                    if(!mod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } };
+                    }
+
+
+
+                    return { status: 200, response: { success: true, message: "Mod approval status changed" } }
+                } catch (err) {
+                    console.error("❌ | Error in ChangeModApprovalStatus method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.ChangeModReleaseApprovalStatus = async (req: Request & {session: {user: string}}, id: string, tag: string, status: boolean) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+                try {
+                    const user = await this.methods.getUser(req.session.user);
+                    if(!user || user.level < 1) {
+                        return { 
+                            status: 403, 
+                            response: {
+                                success: false,
+                                message: "You do not have permission to accept mods",
+                            }
+                        };
+                    }
+
+                    const mod = await this.methods.GetMod(id)
                     if(!mod) {
                         return { status: 404, response: { success: false, message: "Mod not found" } };
                     }
@@ -222,15 +255,14 @@ const data = {
                         { $id: id },
                         { $set: 
                             { 
-                                updateApprovalPending: result.value.releases.some((release: {approved: boolean}) => release.approved === false),
-                                initiallyApproved: !result.value.releases.some((release: {approved: boolean}) => release.approved === true)
+                                updateApprovalPending: result.value.releases.some((release: {approved: boolean}) => release.approved === false)
                             }
                         }
                     )
 
                     return { status: 200, response: { success: true, message: "Mod approval status changed successfully" } }
                 } catch (err) {
-                    console.error("❌ | Error in ChangeModApprovalStatus method:", err);
+                    console.error("❌ | Error in ChangeModReleaseApprovalStatus method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }
@@ -248,7 +280,7 @@ const data = {
                         };
                     }
     
-                    const mods = await this.collections.catalog.find({ updateApprovalPending: true }).toArray();
+                    const mods = await this.collections.catalog.find({ updateApprovalPending: true, $or: [{ modApproved: false }] }).toArray();
                     if(!mods) {
                         return { status: 404, response: { success: false, message: "No mods found" } };
                     }
@@ -291,8 +323,80 @@ const data = {
                     }
                 }).catch((err) => {
                     console.error("❌ | Error updating user submission ban status:", err);
-                    return { status: 500, response: { success: false, message: "Error updating user submission ban status" } };
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
                 })
+            }
+
+            this.methods.ChangeModSettings = async (
+                req: Request & {session: {user: string}}, 
+                modId: string, 
+                settings: {
+                    name?: string,
+                    description?: string,
+                    icon?: string
+                }
+            ): Promise<{status: number, response: {success: boolean, message: string}}> => {
+                try {
+                    const user = await this.methods.getUser(req.session.user);
+                    if(!user) {
+                        return { 
+                            status: 401,
+                            response: {
+                                success: false,
+                                message: "You must be logged in to change mod settings",
+                            }
+                        };
+                    }
+    
+                    const mod = await this.methods.GetMod(modId)
+                    if(!mod) {
+                        return {
+                            status: 404,
+                            response: {
+                                success: false,
+                                message: "Mod not found"       
+                            }
+                        }
+                    }
+    
+                    // Maybe add collaborators in the future, idk
+                    if(mod.author !== req.session.user && user.level < 1) {
+                        return {
+                            status: 403,
+                            response: {
+                                success: false,
+                                message: "You do not have permission to edit this mod!"
+                            }
+                        }
+                    }
+    
+                    const allowedFields = [
+                        "name",
+                        "description",
+                        "icon"
+                    ]
+    
+                    await this.collections.catalog.updateOne({ $id: modId }, {
+                        $set: {
+                            ...(Object.fromEntries(
+                                Object.entries(settings).filter(([key]) => allowedFields.includes(key))
+                            )),
+                            approved: false,
+                            reviewed: false
+                        }
+                    })
+
+                    return {
+                        status: 200,
+                        response: {
+                            success: true,
+                            message: "Mod settings updated successfully",
+                        }
+                    }
+                } catch(err) {
+                    console.error("❌ | Error in ChangeModSettings method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
             }
 
             await this.databases.accounts.command({ ping: 1 })
