@@ -33,7 +33,7 @@ export default (app: Express) => {
     })
 
     return {
-        route: "/api/v1/mods/ban",
+        route: "/api/v1/mods/submit_unban",
         method: "POST"
     }
 }

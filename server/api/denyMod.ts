@@ -39,7 +39,7 @@ export default (app: Express) => {
     })
     
     return {
-        route: "/api/v1/mods/accept",
+        route: "/api/v1/mods/deny",
         method: "POST",
     }
 }

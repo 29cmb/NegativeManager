@@ -69,6 +69,12 @@ const data = {
                 return data.collections.catalog.findOne({ $id: id })
             }
 
+            this.methods.GetRelease = async (modId: string, tag: string) => {
+                const mod = await this.methods.GetMod(modId)
+                if (!mod || !Array.isArray(mod.releases)) return null;
+                return mod.releases.find((release: any) => release.tag === tag) || null;
+            }
+
             this.methods.login = async (req: Request & {session: {user: string}}, username: string, password: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
                 const user = await data.methods.GetUserFromUsername(username);
                 if (!user) {
@@ -160,7 +166,8 @@ const data = {
                                 name: releaseInfo.name,
                                 body: releaseInfo.body,
                                 tag: releaseInfo.tag_name,
-                                url: releaseInfo.zipball_url,
+                                url: github_release_link,
+                                download: releaseInfo.zipball_url,
                                 dependencies,
                                 created_at: releaseInfo.published_at,
                                 checksum,
@@ -395,6 +402,97 @@ const data = {
                     }
                 } catch(err) {
                     console.error("❌ | Error in ChangeModSettings method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.UpdateReleaseSettings = async (
+                req: Request & {session: {user: string}}, 
+                modId: string,
+                tag: string 
+            ): Promise<{status: number, response: {success: boolean, message: string}}> => {
+                try {
+                    const mod = this.methods.GetMod(modId)
+                    if(!mod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const release = this.methods.GetRelease(modId, tag)
+                    if(!release) {
+                        return { status: 404, response: { success: false, message: "Release not found" } }
+                    }
+
+                    const user = this.methods.getUser(req.session.user)
+                    if(!user) {
+                        return { status: 401, response: { success: false, message: "You must be logged in to update release settings" } }
+                    }
+
+                    if(mod.author !== user.$id && user.level < 1) {
+                        return {
+                            status: 403,
+                            response: {
+                                success: false,
+                                message: "You do not have permission to edit this release!"
+                            }
+                        }
+                    }
+
+                    const match = release.url.match(/^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/)
+                    if (!match) {
+                        return { status: 400, response: { success: false, message: "Invalid GitHub release link" } }
+                    }
+
+                    const [, owner, repo] = match
+                    if(!tag) {
+                        return { status: 400, response: { success: false, message: "Invalid GitHub release link" } }
+                    }
+
+                    let releaseInfo;
+                    try {
+                        const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`, {
+                            headers: { "Accept": "application/vnd.github+json" }
+                        });
+                        releaseInfo = response.data
+                    } catch (err: any) {
+                        switch(err?.response?.status) {
+                            case 404:
+                                return { status: 404, response: { success: false, message: "Release not found" } }
+                            case 403:
+                                return { status: 429, response: { success: false, message: "Rate limit exceeded" } }
+                            case 500:
+                                return { status: 500, response: { success: false, message: "GitHub API error" } }
+                            default:
+                                return { status: 500, response: { success: false, message: "Unknown error" } }
+                        }
+                    }
+
+                    let checksum;
+                    try {
+                        const response = await axios.get(releaseInfo.zipball_url, { responseType: "arraybuffer" })
+                        const hash = crypto.createHash('sha256')
+                        hash.update(response.data)
+                        checksum = hash.digest('hex')
+                    } catch (err) {
+                        console.error("❌ | Error calculating checksum:", err)
+                        return { status: 500, response: { success: false, message: "Error calculating checksum" } }
+                    }
+
+                    await this.collections.catalog.updateOne(
+                        { $id: modId, "releases.tag": tag },
+                        {
+                            $set: {
+                                "releases.$.name": releaseInfo.name,
+                                "releases.$.body": releaseInfo.body,
+                                "releases.$.checksum": checksum,
+                                "releases.$.reviewed": false,
+                                "releases.$.approved": false
+                            }
+                        }
+                    );
+
+                    return { status: 200, response: { success: true, message: "Release updated successfully" } }
+                } catch(err) {
+                    console.error("❌ | Error in UpdateReleaseSettings method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }

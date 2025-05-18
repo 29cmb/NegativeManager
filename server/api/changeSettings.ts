@@ -4,7 +4,7 @@ import database from "../modules/database"
 const githubSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)(?:\.git)?$/;
 
 export default (app: Express) => {
-    app.post("/api/v1/mods/set_settings", async (req: Request & {
+    app.post("/api/v1/mods/settings", async (req: Request & {
             session?: { user?: string };
             body: {
                 mod: string,
