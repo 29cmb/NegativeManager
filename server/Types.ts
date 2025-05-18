@@ -33,7 +33,8 @@ export type Database = {
         GetModQueue(req: StrictRouteRequest): RouteMethodReturn
         SubmissionBan(req: StrictRouteRequest, id: string, status: boolean): RouteMethodReturn
         ChangeModSettings(req: StrictRouteRequest, modId: string, settings: { name?: string, description?: string, icon?: string }): RouteMethodReturn
-        UpdateReleaseSettings(req: StrictRouteRequest, modId: string, tag: string): RouteMethodReturn
+        UpdateReleaseSettings(req: StrictRouteRequest, modId: string, tag: string): RouteMethodReturn,
+        ArchiveMod(req: StrictRouteRequest, id: string): RouteMethodReturn
     },
     init(): Promise<void>
 }
@@ -60,6 +61,7 @@ export type ModData = {
     approved: boolean,
     reviewed: boolean,
     moderationReason: string | null,
+    archived: boolean,
     downloads: number,
     favorites: number,
     releases: ReleaseData[]

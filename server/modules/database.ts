@@ -3,7 +3,7 @@ import { argon2encrypt, argon2verify } from "./encryption";
 import { Request } from "express"
 import axios from "axios"
 import crypto from "crypto"
-import { Database, ModData } from "../Types";
+import { Database, ModData, StrictRouteRequest } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -168,8 +168,9 @@ const data = {
                         source_code,
                         updateApprovalPending: true,
                         approved: false,
-                        moderationReason: null,
                         reviewed: false,
+                        moderationReason: null,
+                        archived: false,
                         downloads: 0,
                         favorites: 0,
                         releases: [
@@ -508,6 +509,26 @@ const data = {
                     return { status: 200, response: { success: true, message: "Release updated successfully" } }
                 } catch(err) {
                     console.error("❌ | Error in UpdateReleaseSettings method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.ArchiveMod = async (req: StrictRouteRequest, id: string) => {
+                try {
+                    const mod = await this.methods.GetMod(id)
+                    if(!mod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const user = await this.methods.getUser(req.session.user)
+                    if(!user || (mod.author !== user.$id && user.level < 1)) {
+                        return { status: 403, response: { success: false, message: "You do not have permission to archive this mod" } }
+                    }
+
+                    await this.collections.catalog.updateOne({ $id: id }, {$set: { archived: true }})
+                    return { status: 200, response: { success: true, message: "Mod archived successfully"}}
+                } catch(err) {
+                    console.error("❌ | Error in ArchiveMod method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }
