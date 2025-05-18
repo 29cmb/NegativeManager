@@ -1,13 +1,12 @@
-import { Collection, Db, ModifyResult, MongoClient, ServerApiVersion, WithId } from "mongodb";
+import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
-import { Request } from "express"
 import axios from "axios"
 import crypto from "crypto"
 import { Database, ModData, StrictRouteRequest } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
-const client = new MongoClient(uri as string, {
+const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
@@ -20,7 +19,7 @@ const data = {
     client,
     databases: {},
     collections: {},
-    methods: {} as {[key: string]: Function},
+    methods: {},
     async init() {
         try {
             await client.connect();
@@ -63,15 +62,28 @@ const data = {
             }
 
             this.methods.GetUserFromUsername = async (username) => {
-                return data.collections.users.findOne({ username });
+                return this.collections.users.findOne({ username });
             }
 
             this.methods.getUser = async (id) => {
-                return data.collections.users.findOne({ $id: id });
+                return this.collections.users.findOne({ _id: new ObjectId(id) });
             }
 
             this.methods.GetMod = async (id) => {
-                return data.collections.catalog.findOne({ $id: id })
+                try {
+                    var oid
+                    try {
+                        // don't error if the id isn't in the right format
+                        oid = new ObjectId(id)
+                    } catch(_) {
+                        return null
+                    } 
+
+                    return this.collections.catalog.findOne({ _id: oid })
+                } catch(err) {
+                    console.log(`❌ | An error occured in the GetMod method: ${err}`)
+                    return null
+                }
             }
 
             this.methods.GetRelease = async (modId, tag) => {
@@ -91,7 +103,7 @@ const data = {
                     return { status: 401, response: { success: false, message: "Invalid username or password" } };
                 }
 
-                req.session.user = user.$id
+                req.session.user = user._id.toString()
                 return { status: 200, response: { success: true, message: "Login successful" } };
             }
 
@@ -216,7 +228,7 @@ const data = {
                     }
 
                     // Hey guys! Quick tip! When you rework functions, add the funtionality to the rework!!!
-                    await this.collections.catalog.updateOne({ $id: id }, {
+                    await this.collections.catalog.updateOne({ _id: new ObjectId(id) }, {
                         $set: { approved: status, reviewed: true, moderationReason: reason || null }
                     })
 
@@ -264,7 +276,7 @@ const data = {
                     }
 
                     await this.collections.catalog.findOneAndUpdate(
-                        { $id: id, "releases.tag": tag }, 
+                        { _id: new ObjectId(id), "releases.tag": tag }, 
                         { $set: { 
                             "releases.$.approved": status, 
                             "releases.$.reviewed": true, 
@@ -279,7 +291,7 @@ const data = {
                     }
 
                     await this.collections.catalog.updateOne(
-                        { $id: id },
+                        { _id: new ObjectId(id) },
                         { $set: 
                             { 
                                 updateApprovalPending: result.releases.some((release: {approved: boolean}) => release.approved === false)
@@ -340,7 +352,7 @@ const data = {
                     return { status: 403, response: { success: false, message: "You cannot ban this user" } };
                 }
 
-                return await this.collections.users.updateOne({ $id: id }, { $set: { submission_ban: status } }).then(() => {
+                return await this.collections.users.updateOne({ _id: new ObjectId(id) }, { $set: { submission_ban: status } }).then(() => {
                     return {
                         status: 200,
                         response: {
@@ -399,7 +411,7 @@ const data = {
                         "icon"
                     ]
     
-                    await this.collections.catalog.updateOne({ $id: modId }, {
+                    await this.collections.catalog.updateOne({ _id: new ObjectId(modId) }, {
                         $set: {
                             ...(Object.fromEntries(
                                 Object.entries(settings).filter(([key]) => allowedFields.includes(key))
@@ -443,7 +455,7 @@ const data = {
                         return { status: 401, response: { success: false, message: "You must be logged in to update release settings" } }
                     }
 
-                    if(mod.author !== user.$id && user.level < 1) {
+                    if(mod.author !== user._id.toString() && user.level < 1) {
                         return {
                             status: 403,
                             response: {
@@ -494,7 +506,7 @@ const data = {
                     }
 
                     await this.collections.catalog.updateOne(
-                        { $id: modId, "releases.tag": tag },
+                        { _id: new ObjectId(modId), "releases.tag": tag },
                         {
                             $set: {
                                 "releases.$.name": releaseInfo.name,
@@ -521,11 +533,11 @@ const data = {
                     }
 
                     const user = await this.methods.getUser(req.session.user)
-                    if(!user || (mod.author !== user.$id && user.level < 1)) {
+                    if(!user || (mod.author !== user._id.toString() && user.level < 1)) {
                         return { status: 403, response: { success: false, message: "You do not have permission to archive this mod" } }
                     }
 
-                    await this.collections.catalog.updateOne({ $id: id }, {$set: { archived: true }})
+                    await this.collections.catalog.updateOne({ _id: new ObjectId(id) }, {$set: { archived: true }})
                     return { status: 200, response: { success: true, message: "Mod archived successfully"}}
                 } catch(err) {
                     console.error("❌ | Error in ArchiveMod method:", err);
