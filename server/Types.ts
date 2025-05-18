@@ -27,7 +27,7 @@ export type Database = {
         GetMod(id: string): Promise<WithId<Document & ModData> | null>
         GetRelease(modId: string, tag: string): Promise<ReleaseData | null>,
         login(req: StrictRouteRequest, username: string, password: string): RouteMethodReturn
-        submit(req: StrictRouteRequest, name: string, description: string, icon: string, dependencies: string[], source_code: string, github_release_link: string): RouteMethodReturn
+        submit(req: StrictRouteRequest, name: string, description: string, icon: string, dependencies: [{ id: string, tag: string }], source_code: string, github_release_link: string): RouteMethodReturn
         ChangeModApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn
         ChangeModReleaseApprovalStatus(req: StrictRouteRequest, id: string, tag: string, status: boolean, reason?: string): RouteMethodReturn
         GetModQueue(req: StrictRouteRequest): RouteMethodReturn
@@ -71,7 +71,7 @@ export type ReleaseData = {
     tag: string,
     url: string,
     download: string,
-    dependencies: string[],
+    dependencies: [{ id: string, tag: string }],
     created_at: string,
     checksum: string,
     approved: boolean,

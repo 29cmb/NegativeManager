@@ -108,9 +108,14 @@ const data = {
                     }
 
                     for (const dep of dependencies) {
-                        const mod = await this.methods.GetMod(dep);
+                        const mod = await this.methods.GetMod(dep.id);
                         if(!mod) {
-                            return { status: 400, response: { success: false, message: "Invalid dependency table" } }
+                            return { status: 404, response: { success: false, message: `Could not find mod ${dep.id} from the dependency table` } }
+                        }
+
+                        const release = await this.methods.GetRelease(dep.id, dep.tag)
+                        if(!release) {
+                            return { status: 404, response: { success: false, message: `Could not find release ${dep.tag} under mod ${dep.id} from the dependency table` } }
                         }
                     }
 

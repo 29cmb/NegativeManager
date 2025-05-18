@@ -35,7 +35,7 @@ export default (app: Express) => {
                 || typeof github_release_link !== "string"
                 || !Array.isArray(dependencies)
                 || !icon.startsWith("data:image/")
-                || dependencies.some((dep: any) => typeof dep !== "string")
+                || dependencies.some((dep: {id: string, tag: string}) => dep.id === undefined || dep.tag === undefined || typeof(dep.id) !== "string" || typeof(dep.tag) !== "string")
                 || !githubSourceRegex.test(source_code)
                 || !githubReleaseRegex.test(github_release_link)
             ) {
@@ -78,7 +78,7 @@ export default (app: Express) => {
                 name,
                 description,
                 icon,
-                dependencies,
+                dependencies as [{ id: string, tag: string }],
                 source_code,
                 github_release_link
             ).then((result: { status: number; response: { success: boolean; message: string } }) => {
