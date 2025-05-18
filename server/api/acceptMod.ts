@@ -1,14 +1,10 @@
-import { Express, Request } from 'express';
+import { Express } from 'express';
 import database from '../modules/database';
+import { RouteRequest, StrictRouteRequest } from '../Types';
 
 // TODO: Test this endpoint, unable to store cookies in postman
 export default (app: Express) => {
-    app.post("/api/v1/mods/accept", async (req: Request & {
-        session?: { user?: string };
-        body: {
-            mod: string
-        };
-    }, res) => {
+    app.post("/api/v1/mods/accept", async (req: RouteRequest, res) => {
         const { mod } = req.body;
         if (
             mod === undefined 
@@ -30,7 +26,7 @@ export default (app: Express) => {
         }
 
         database.methods.ChangeModApprovalStatus(
-            req,
+            req as StrictRouteRequest,
             mod,
             true
         ).then((result: { status: number, response: { success: boolean, message: string } }) => {

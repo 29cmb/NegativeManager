@@ -1,10 +1,9 @@
 import { Express, Request } from 'express';
 import database from '../modules/database';
+import { RouteRequest, StrictRouteRequest } from '../Types';
 
 export default (app: Express) => {
-    app.get("/api/v1/mods/queue", async (req: Request & {
-        session?: { user?: string };
-    }, res) => {
+    app.get("/api/v1/mods/queue", async (req: RouteRequest, res) => {
         if (!req.session?.user) {
             res.status(401).json({
                 success: false,
@@ -13,7 +12,7 @@ export default (app: Express) => {
             return;
         }
 
-        database.methods.GetModQueue(req).then((result: { status: number, response: { success: boolean, message: string } }) => {
+        database.methods.GetModQueue(req as StrictRouteRequest).then((result: { status: number, response: { success: boolean, message: string } }) => {
             res.status(result.status).json(result.response);
         })
     })

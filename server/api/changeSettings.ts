@@ -1,21 +1,11 @@
-import { Express, Request } from "express"
+import { Express } from "express"
 import database from "../modules/database"
+import { RouteRequest, StrictRouteRequest } from "../Types";
 
 const githubSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)(?:\.git)?$/;
 
 export default (app: Express) => {
-    app.post("/api/v1/mods/settings", async (req: Request & {
-            session?: { user?: string };
-            body: {
-                mod: string,
-                settings: {
-                    name?: string,
-                    description?: string,
-                    icon?: string,
-                    source_code?: string
-                }
-            };
-    }, res) => {
+    app.post("/api/v1/mods/settings", async (req: RouteRequest, res) => {
         const { mod, settings } = req.body
 
         if(
@@ -43,7 +33,7 @@ export default (app: Express) => {
         }
         
         database.methods.ChangeModSettings(
-            req,
+            req as StrictRouteRequest,
             mod,
             settings
         ).then((result: { status: number, response: { success: boolean, message: string } }) => {

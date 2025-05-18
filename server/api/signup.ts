@@ -1,7 +1,8 @@
 import { Express } from "express"
 import database from "../modules/database"
+import { RouteRequest } from "../Types";
 export default (app: Express) => {
-    app.post("/api/v1/signup", (req, res) => {
+    app.post("/api/v1/signup", (req: RouteRequest, res) => {
         const { email, username, password } = req.body;
         if(
             email === undefined

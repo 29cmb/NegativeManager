@@ -1,14 +1,9 @@
-import { Express, Request, response } from "express"
+import { Express } from "express"
 import database from "../modules/database"
+import { RouteRequest, StrictRouteRequest } from "../Types"
 
 export default (app: Express) => {
-    app.post("/api/v1/mods/release/update", (req: Request & {
-            session?: { user?: string };
-            body: {
-                mod: string,
-                tag: string
-            };
-    }, res) => {
+    app.post("/api/v1/mods/release/update", (req: RouteRequest, res) => {
         const { mod, tag } = req.body
         if(
             mod === undefined
@@ -25,7 +20,7 @@ export default (app: Express) => {
             return
         }
 
-        database.methods.UpdateReleaseSettings(req, mod, tag).then((result: { status: number, response: { success: boolean, message: string } }) => {
+        database.methods.UpdateReleaseSettings(req as StrictRouteRequest, mod, tag).then((result: { status: number, response: { success: boolean, message: string } }) => {
             res.status(result.status).json(result.response);
         })
     })

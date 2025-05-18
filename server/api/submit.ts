@@ -1,5 +1,6 @@
-import { Express, Request, Response } from "express";
+import { Express, Response } from "express";
 import database from "../modules/database";
+import { RouteRequest, StrictRouteRequest } from "../Types";
 
 const githubReleaseRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/;
 const githubSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)(?:\.git)?$/;
@@ -8,17 +9,7 @@ export default (app: Express) => {
     app.post(
         "/api/v1/mods/submit",
         async (
-            req: Request & {
-                session?: { user?: string };
-                body: {
-                    name: string;
-                    description: string;
-                    icon: string;
-                    dependencies: string[];
-                    source_code: string;
-                    github_release_link: string;
-                };
-            },
+            req: RouteRequest,
             res: Response
         ) => {
             const {
@@ -83,7 +74,7 @@ export default (app: Express) => {
             }
 
             database.methods.submit(
-                req,
+                req as StrictRouteRequest,
                 name,
                 description,
                 icon,

@@ -1,13 +1,9 @@
-import { Express, Request } from "express"
+import { Express } from "express"
 import database from "../modules/database"
+import { RouteRequest, StrictRouteRequest } from "../Types";
 
 export default (app: Express) => {
-    app.post("/api/v1/mods/submit_unban", (req: Request & {
-        session?: { user?: string },
-        body: {
-            id: string;
-        };
-    }, res) => {
+    app.post("/api/v1/mods/submit_unban", (req: RouteRequest, res) => {
         const { id } = req.body;
         if (id === undefined || typeof id !== "string") {
             res.status(400).json({
@@ -27,7 +23,7 @@ export default (app: Express) => {
             return;
         }
 
-        database.methods.SubmissionBan(req, id, false).then((result: { status: number, response: { success: boolean, message: string } }) => {
+        database.methods.SubmissionBan(req as StrictRouteRequest, id, false).then((result: { status: number, response: { success: boolean, message: string } }) => {
             res.status(result.status).json(result.response);
         })
     })

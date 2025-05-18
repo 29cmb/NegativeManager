@@ -1,8 +1,9 @@
-import { Collection, Db, MongoClient, ServerApiVersion, WithId } from "mongodb";
+import { Collection, Db, ModifyResult, MongoClient, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import { Request } from "express"
 import axios from "axios"
 import crypto from "crypto"
+import { Database, ModData } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -17,8 +18,8 @@ const client = new MongoClient(uri as string, {
 const data = {
     uri,
     client,
-    databases: {} as {[key: string]: Db},
-    collections: {} as {[key: string]: Collection},
+    databases: {},
+    collections: {},
     methods: {} as {[key: string]: Function},
     async init() {
         try {
@@ -31,20 +32,24 @@ const data = {
             // collections setup
             this.collections.users = this.databases.accounts.collection(process.env.USERS_COLLECTION || "Users");
             this.collections.sessions = this.databases.accounts.collection(process.env.SESSIONS_COLLECTION || "Sessions");
-
-            this.collections.catalog = this.databases.mods.collection(process.env.CATALOG_COLLECTION || "Catalog");
+            this.collections.catalog = this.databases.mods.collection<ModData>(process.env.CATALOG_COLLECTION || "Catalog");
 
             // initialize methods
-            this.methods.signup = async (email: string, username: string, password: string): Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.signup = async (email, username, password) => {
                 const existingUser = await this.methods.getUser(username)
                 if (existingUser) {
                     return { status: 409, response: { success: false, message: "Username already exists" } };
                 }
 
+                const pw = await argon2encrypt(password) // don't forget this, pretty important
+                if(pw == null) {
+                    return { status: 500, response: { success: false, message: "Error hashing password" } }
+                }
+
                 await data.collections.users.insertOne({
                     email,
                     username,
-                    password: (await argon2encrypt(password)), // don't forget this, pretty important
+                    password: pw,
                     createdAt: Date.now(),
                     verified: false,
                     submission_ban: false,
@@ -57,25 +62,25 @@ const data = {
                 return { status: 200, response: { success: true, message: "User created successfully" } };
             }
 
-            this.methods.GetUserFromUsername = async (username: string) => {
+            this.methods.GetUserFromUsername = async (username) => {
                 return data.collections.users.findOne({ username });
             }
 
-            this.methods.getUser = async (id: string) => {
+            this.methods.getUser = async (id) => {
                 return data.collections.users.findOne({ $id: id });
             }
 
-            this.methods.GetMod = async (id: string) => {
+            this.methods.GetMod = async (id) => {
                 return data.collections.catalog.findOne({ $id: id })
             }
 
-            this.methods.GetRelease = async (modId: string, tag: string) => {
+            this.methods.GetRelease = async (modId, tag) => {
                 const mod = await this.methods.GetMod(modId)
                 if (!mod || !Array.isArray(mod.releases)) return null;
                 return mod.releases.find((release: any) => release.tag === tag) || null;
             }
 
-            this.methods.login = async (req: Request & {session: {user: string}}, username: string, password: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.login = async (req, username, password) => {
                 const user = await data.methods.GetUserFromUsername(username);
                 if (!user) {
                     return { status: 401, response: { success: false, message: "Invalid username or password" } };
@@ -90,7 +95,7 @@ const data = {
                 return { status: 200, response: { success: true, message: "Login successful" } };
             }
 
-            this.methods.submit = async (req: Request & {session: {user: string}}, name: string, description: string, icon: string, dependencies: string[], source_code: string, github_release_link: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.submit = async (req, name, description, icon, dependencies, source_code, github_release_link) => {
                 try {
                     const existingMod = await this.collections.catalog.findOne({ name, author: req.session.user })
                     if(existingMod) {
@@ -158,6 +163,7 @@ const data = {
                         source_code,
                         updateApprovalPending: true,
                         approved: false,
+                        moderationReason: null,
                         reviewed: false,
                         downloads: 0,
                         favorites: 0,
@@ -172,7 +178,8 @@ const data = {
                                 created_at: releaseInfo.published_at,
                                 checksum,
                                 approved: false,
-                                reviewed: false
+                                reviewed: false,
+                                moderationReason: null,
                             }
                         ]
                     });
@@ -184,7 +191,7 @@ const data = {
                 }
             }
 
-            this.methods.ChangeModApprovalStatus = async (req: Request & {session: {user: string}}, id: string) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.ChangeModApprovalStatus = async (req, id, status, reason) => {
                 try {
                     const user = await this.methods.getUser(req.session.user);
                     if(!user || user.level < 1) {
@@ -202,7 +209,10 @@ const data = {
                         return { status: 404, response: { success: false, message: "Mod not found" } };
                     }
 
-
+                    // Hey guys! Quick tip! When you rework functions, add the funtionality to the rework!!!
+                    await this.collections.catalog.updateOne({ $id: id }, {
+                        $set: { approved: status, reviewed: true, moderationReason: reason || null }
+                    })
 
                     return { status: 200, response: { success: true, message: "Mod approval status changed" } }
                 } catch (err) {
@@ -211,7 +221,7 @@ const data = {
                 }
             }
 
-            this.methods.ChangeModReleaseApprovalStatus = async (req: Request & {session: {user: string}}, id: string, tag: string, status: boolean) : Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.ChangeModReleaseApprovalStatus = async (req, id, tag, status, reason?) => {
                 try {
                     const user = await this.methods.getUser(req.session.user);
                     if(!user || user.level < 1) {
@@ -247,13 +257,17 @@ const data = {
                         return { status: 409, response: { success: false, message: "Release already has that approval status" } };
                     }
 
-                    const result = await this.collections.catalog.findOneAndUpdate(
+                    await this.collections.catalog.findOneAndUpdate(
                         { $id: id, "releases.tag": tag }, 
-                        { $set: { "releases.$.approved": status } },
-                        { returnDocument: "after" }
+                        { $set: { 
+                            "releases.$.approved": status, 
+                            "releases.$.reviewed": true, 
+                            "releases.$.moderationReason": reason || null
+                        } }
                     )
 
-                    if(!result || !result.value) {
+                    const result = await this.methods.GetMod(id)
+                    if(!result) {
                         console.error("❌ | Error updating release tag")
                         return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
                     }
@@ -262,7 +276,7 @@ const data = {
                         { $id: id },
                         { $set: 
                             { 
-                                updateApprovalPending: result.value.releases.some((release: {approved: boolean}) => release.approved === false)
+                                updateApprovalPending: result.releases.some((release: {approved: boolean}) => release.approved === false)
                             }
                         }
                     )
@@ -274,7 +288,7 @@ const data = {
                 }
             }
 
-            this.methods.GetModQueue = async (req: Request & {session: {user: string}}) : Promise<{status: number, response: {[key: string]: any}}> => {
+            this.methods.GetModQueue = async (req) => {
                 try {
                     const user = await this.methods.getUser(req.session.user);
                     if(!user || user.level < 1) {
@@ -299,7 +313,7 @@ const data = {
                 }
             }
 
-            this.methods.SubmissionBan = async (req: Request & {session: {user: string}}, id: string, status: boolean): Promise<{status: number, response: {success: boolean, message: string}}> => {
+            this.methods.SubmissionBan = async (req, id, status) => {
                 const user = await this.methods.getUser(req.session.user);
                 if(!user || user.level < 1) {
                     return { 
@@ -335,14 +349,10 @@ const data = {
             }
 
             this.methods.ChangeModSettings = async (
-                req: Request & {session: {user: string}}, 
-                modId: string, 
-                settings: {
-                    name?: string,
-                    description?: string,
-                    icon?: string
-                }
-            ): Promise<{status: number, response: {success: boolean, message: string}}> => {
+                req,
+                modId, 
+                settings
+            ) => {
                 try {
                     const user = await this.methods.getUser(req.session.user);
                     if(!user) {
@@ -407,22 +417,22 @@ const data = {
             }
 
             this.methods.UpdateReleaseSettings = async (
-                req: Request & {session: {user: string}}, 
-                modId: string,
-                tag: string 
-            ): Promise<{status: number, response: {success: boolean, message: string}}> => {
+                req,
+                modId,
+                tag 
+            ) => {
                 try {
-                    const mod = this.methods.GetMod(modId)
+                    const mod = await this.methods.GetMod(modId)
                     if(!mod) {
                         return { status: 404, response: { success: false, message: "Mod not found" } }
                     }
 
-                    const release = this.methods.GetRelease(modId, tag)
+                    const release = await this.methods.GetRelease(modId, tag)
                     if(!release) {
                         return { status: 404, response: { success: false, message: "Release not found" } }
                     }
 
-                    const user = this.methods.getUser(req.session.user)
+                    const user = await this.methods.getUser(req.session.user)
                     if(!user) {
                         return { status: 401, response: { success: false, message: "You must be logged in to update release settings" } }
                     }
@@ -507,6 +517,6 @@ const data = {
             throw error;
         }
     }
-}
+} as Database
 
 export default data;

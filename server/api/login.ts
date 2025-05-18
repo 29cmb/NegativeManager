@@ -1,7 +1,8 @@
 import { Express, Request } from "express"
 import database from "../modules/database"
+import { RouteRequest, StrictRouteRequest } from "../Types";
 export default (app: Express) => {
-    app.post("/api/v1/login", (req: Request & { session?: { user?: string } }, res) => {
+    app.post("/api/v1/login", (req: RouteRequest, res) => {
         const { username, password } = req.body;
         if(
             username === undefined
@@ -18,7 +19,7 @@ export default (app: Express) => {
             return
         }
 
-        database.methods.login(req, username, password).then((result: {status: number, response: {success: boolean, message: string}}) => {
+        database.methods.login(req as StrictRouteRequest, username, password).then((result: {status: number, response: {success: boolean, message: string}}) => {
             res.status(result.status).json(result.response)
         })
     })
