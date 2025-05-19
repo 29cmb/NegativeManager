@@ -545,6 +545,19 @@ const data = {
                 }
             }
 
+            this.methods.ModDownload = async (id: string, tag: string) => {
+                const mod = await this.methods.GetMod(id)
+                if(!mod) return
+
+                const release = await this.methods.GetRelease(id, tag)
+                if(!release) return
+
+                await this.collections.catalog.updateOne(
+                    { _id: new ObjectId(id), "releases.tag": tag },
+                    { $inc: { "releases.$.downloads": 1 }}
+                );
+            }
+
             await this.databases.accounts.command({ ping: 1 })
             console.log("🏓 | Pinged accounts database")
             await this.databases.mods.command({ ping: 1 })

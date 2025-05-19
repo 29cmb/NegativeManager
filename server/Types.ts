@@ -34,7 +34,8 @@ export type Database = {
         SubmissionBan(req: StrictRouteRequest, id: string, status: boolean): RouteMethodReturn
         ChangeModSettings(req: StrictRouteRequest, modId: string, settings: { name?: string, description?: string, icon?: string }): RouteMethodReturn
         UpdateReleaseSettings(req: StrictRouteRequest, modId: string, tag: string): RouteMethodReturn,
-        ArchiveMod(req: StrictRouteRequest, id: string): RouteMethodReturn
+        ArchiveMod(req: StrictRouteRequest, id: string): RouteMethodReturn,
+        ModDownload(id: string, tag: string): Promise<void>
     },
     init(): Promise<void>
 }
