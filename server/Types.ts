@@ -18,7 +18,8 @@ export type Database = {
     collections: {
         users: Collection<UserData>,
         sessions: Collection,
-        catalog: Collection<ModData>
+        catalog: Collection<ModData>,
+        comments: Collection<CommentData>
     },
     methods: {
         signup(email: string, username: string, password: string): RouteMethodReturn
@@ -38,7 +39,8 @@ export type Database = {
         ModDownload(id: string, tag: string): Promise<void>,
         GetSearch(page: number, query?: string, sorting?: "downloads" | "favorites"): Promise<
             {success: boolean, mods?: Document[] | WithId<{ success: boolean, mods: [ModData] }>}
-        >
+        >,
+        Comment(req: StrictRouteRequest, mod: string, comment: string): RouteMethodReturn
     },
     init(): Promise<void>
 }
@@ -83,4 +85,11 @@ export type ReleaseData = {
     approved: boolean,
     reviewed: boolean,
     moderationReason: string | null
+}
+
+export type CommentData = {
+    author: string,
+    mod: string,
+    content: string,
+    created_at: number
 }

@@ -2,7 +2,7 @@ import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
-import { Database, ModData, StrictRouteRequest } from "../Types";
+import { CommentData, Database, ModData, StrictRouteRequest } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -32,6 +32,7 @@ const data = {
             this.collections.users = this.databases.accounts.collection(process.env.USERS_COLLECTION || "Users");
             this.collections.sessions = this.databases.accounts.collection(process.env.SESSIONS_COLLECTION || "Sessions");
             this.collections.catalog = this.databases.mods.collection<ModData>(process.env.CATALOG_COLLECTION || "Catalog");
+            this.collections.comments = this.databases.mods.collection<CommentData>(process.env.COMMENTS_COLLECTION || "Comments")
 
             // initialize methods
             this.methods.signup = async (email, username, password) => {
@@ -595,6 +596,32 @@ const data = {
                     return {
                         success: false
                     }
+                }
+            }
+
+            this.methods.Comment = async(req: StrictRouteRequest, mod: string, comment: string) => {
+                try {
+                    const dbMod = await this.methods.GetMod(mod)
+                    if(!dbMod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const user = await this.methods.getUser(req.session.user)
+                    if(!user) {
+                        return { status: 401, response: { success: false, message: "You must be logged in to submit a comment" } }
+                    }
+
+                    await this.collections.comments.insertOne({
+                        author: user._id.toString(),
+                        mod: dbMod._id.toString(),
+                        content: comment,
+                        created_at: Date.now()
+                    })
+
+                    return { status: 200, response: { success: true, message: "Comment posted successfully" } }
+                } catch (err) {
+                    console.error("❌ | Error in Comment method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }
 
