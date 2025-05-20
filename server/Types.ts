@@ -40,7 +40,8 @@ export type Database = {
         GetSearch(page: number, query?: string, sorting?: "downloads" | "favorites"): Promise<
             {success: boolean, mods?: Document[] | WithId<{ success: boolean, mods: [ModData] }>}
         >,
-        Comment(req: StrictRouteRequest, mod: string, comment: string): RouteMethodReturn
+        Comment(req: StrictRouteRequest, mod: string, comment: string): RouteMethodReturn,
+        GetModComments(mod: string): Promise<{ status: number, response: {[key: string]: any}}>
     },
     init(): Promise<void>
 }

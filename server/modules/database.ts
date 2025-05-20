@@ -625,6 +625,16 @@ const data = {
                 }
             }
 
+            this.methods.GetModComments = async(mod: string) => {
+                try {
+                    const comments = await this.collections.comments.find({ mod }).toArray()
+                    return { status: 200, response: { success: true, comments }}
+                } catch (err) {
+                    console.error("❌ | Error in GetModComments method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
             await this.databases.accounts.command({ ping: 1 })
             console.log("🏓 | Pinged accounts database")
             await this.databases.mods.command({ ping: 1 })
