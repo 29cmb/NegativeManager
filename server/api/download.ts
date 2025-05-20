@@ -1,6 +1,7 @@
 import { Express } from "express"
 import axios from "axios"
 import database from "../modules/database"
+import crypto from "crypto"
 
 const visits = {} as {[mod: string]: string[]}
 
@@ -34,6 +35,29 @@ export default (app: Express) => {
 
         if (!release.download) {
             res.status(400).json({ success: false, message: "No download URL found for this mod" })
+            return
+        }
+
+        try {
+            await axios.head(release.download, { timeout: 5000 });
+        } catch (err) {
+            res.status(404).json({ success: false, message: "Download URL is not reachable or does not exist" });
+            return;
+        }
+
+        let checksum;
+        try {
+            const response = await axios.get(release.download, { responseType: "arraybuffer" })
+            const hash = crypto.createHash('sha256')
+            hash.update(response.data)
+            checksum = hash.digest('hex')
+        } catch (err) {
+            res.status(500).json({ success: false, message: "Error calculating checksum" })
+            return
+        }
+
+        if(checksum !== release.checksum) {
+            res.status(422).json({ success: false, message: "Checksum is not valid for file. Owner must update the mod." })
             return
         }
 
