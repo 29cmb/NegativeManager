@@ -35,7 +35,10 @@ export type Database = {
         ChangeModSettings(req: StrictRouteRequest, modId: string, settings: { name?: string, description?: string, icon?: string }): RouteMethodReturn
         UpdateReleaseSettings(req: StrictRouteRequest, modId: string, tag: string): RouteMethodReturn,
         ArchiveMod(req: StrictRouteRequest, id: string): RouteMethodReturn,
-        ModDownload(id: string, tag: string): Promise<void>
+        ModDownload(id: string, tag: string): Promise<void>,
+        GetSearch(page: number, query?: string, sorting?: "downloads" | "favorites"): Promise<
+            {success: boolean, mods?: Document[] | WithId<{ success: boolean, mods: [ModData] }>}
+        >
     },
     init(): Promise<void>
 }

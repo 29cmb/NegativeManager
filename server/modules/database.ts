@@ -197,7 +197,7 @@ const data = {
                                 checksum,
                                 approved: false,
                                 reviewed: false,
-                                moderationReason: null,
+                                moderationReason: null
                             }
                         ]
                     });
@@ -556,6 +556,46 @@ const data = {
                     { _id: new ObjectId(id), "releases.tag": tag },
                     { $inc: { "releases.$.downloads": 1 }}
                 );
+            }
+
+            // im far too lazy to do all this
+            // thanks copilot
+            // how the hell do you do search queries
+
+            this.methods.GetSearch = async (page: number, query?: string, sorting?: "downloads" | "favorites") => {
+                try {
+                    const PAGE_SIZE = 20;
+                    const filter: any = { archived: { $ne: true }, approved: true };
+    
+                    let mods;
+                    switch(sorting) {
+                        case "favorites":
+                            mods = await this.collections.catalog.aggregate([
+                                { $match: filter },
+                                { $sort: { favorites: -1 } },
+                                { $skip: (page - 1) * PAGE_SIZE },
+                                { $limit: PAGE_SIZE }
+                            ]).toArray();
+                        default: {
+                            mods = await this.collections.catalog.aggregate([
+                                { $match: filter },
+                                { $sort: { downloads: -1 } },
+                                { $skip: (page - 1) * PAGE_SIZE },
+                                { $limit: PAGE_SIZE }
+                            ]).toArray();
+                        }
+                    }
+    
+                    return {
+                        success: true,
+                        mods
+                    };
+                } catch(err) {
+                    console.error("❌ | Error in GetSearch method:", err);
+                    return {
+                        success: false
+                    }
+                }
             }
 
             await this.databases.accounts.command({ ping: 1 })
