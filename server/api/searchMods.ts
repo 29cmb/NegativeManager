@@ -2,10 +2,12 @@ import { Express } from "express"
 import database from "../modules/database"
 
 export default (app: Express) => {
-    app.get("/api/v1/mods/top/:page{/:sort}", async (req, res) => {
-        const { page, sort } = req.params
-        if(!parseInt(page) || parseInt(page) <= 0) {
-            res.status(400).json({ success: false, message: "Page is not a valid number" })
+    app.get("/api/v1/mods/search/:query/:page{/:sort}", async (req, res) => {
+        const { query, page, sort } = req.params
+
+        const pageNum = parseInt(page)
+        if(isNaN(pageNum) || pageNum < 1) {
+            res.status(400).json({ success: false, message: "Page isn't a valid number" })
             return
         }
 
@@ -15,7 +17,7 @@ export default (app: Express) => {
             return
         }
 
-        const result = await database.methods.GetSearch(parseInt(page), undefined, sort as "downloads" | "likes" | undefined)
+        const result = await database.methods.GetSearch(pageNum, query, sort as "downloads" | "likes" | undefined)
         if(result.success === false) {
             res.status(500).json({ success: false, message: "Mongodb error" })
             return
@@ -26,6 +28,6 @@ export default (app: Express) => {
 
     return {
         method: "GET",
-        route: "/api/v1/mods/top"
+        route: "/api/v1/mods/search/:query"
     }
 }

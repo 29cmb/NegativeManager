@@ -22,7 +22,7 @@ export default (app: Express) => {
 
             return;
         }
-
+        
         database.methods.SubmissionBan(req as StrictRouteRequest, id, true).then((result: { status: number, response: { success: boolean, message: string } }) => {
             res.status(result.status).json(result.response);
         })

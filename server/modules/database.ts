@@ -8,9 +8,7 @@ const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPAS
 
 const client = new MongoClient(uri, {
     serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
+        version: ServerApiVersion.v1
     }
 });
 
@@ -579,32 +577,31 @@ const data = {
 
             this.methods.GetSearch = async (page: number, query?: string, sorting?: "downloads" | "likes") => {
                 try {
-                    const PAGE_SIZE = 20;
-                    const filter: any = { archived: { $ne: true }, approved: true };
-    
-                    let mods;
-                    switch(sorting) {
-                        case "likes":
-                            mods = await this.collections.catalog.aggregate([
-                                { $match: filter },
-                                { $sort: { likes: -1 } },
-                                { $skip: (page - 1) * PAGE_SIZE },
-                                { $limit: PAGE_SIZE }
-                            ]).toArray();
-                        default: {
-                            mods = await this.collections.catalog.aggregate([
-                                { $match: filter },
-                                { $sort: { downloads: -1 } },
-                                { $skip: (page - 1) * PAGE_SIZE },
-                                { $limit: PAGE_SIZE }
-                            ]).toArray();
-                        }
+                    const PAGE_SIZE = 20; 
+                    const filter: any = { /*archived: { $ne: true }, approved: true*/ };
+                    
+                    if (query && query.trim().length > 0) {
+                        filter.$text = { $search: query };
                     }
-    
+
+                    let sort: any = { [sorting || "downloads"]: -1 };
+                    const mods = await this.collections.catalog.aggregate([
+                        { $search: {
+                            index: "default",
+                            text: {
+                                query: query,
+                                path: ["name", "description"]
+                            }
+                        }},
+                        { $sort: sort },
+                        { $skip: (page - 1) * PAGE_SIZE },
+                        { $limit: PAGE_SIZE }
+                    ]).toArray()
+
                     return {
                         success: true,
                         mods
-                    };
+                    }
                 } catch(err) {
                     console.error("❌ | Error in GetSearch method:", err);
                     return {
