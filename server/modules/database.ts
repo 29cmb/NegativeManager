@@ -578,7 +578,7 @@ const data = {
             this.methods.GetSearch = async (page: number, query?: string, sorting?: "downloads" | "likes") => {
                 try {
                     const PAGE_SIZE = 20; 
-                    const filter: any = { /*archived: { $ne: true }, approved: true*/ };
+                    const filter: any = { archived: { $ne: true }, approved: true };
                     
                     if (query && query.trim().length > 0) {
                         filter.$text = { $search: query };
