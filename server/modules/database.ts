@@ -53,7 +53,8 @@ const data = {
                     createdAt: Date.now(),
                     verified: false,
                     submission_ban: false,
-                    level: 0
+                    level: 0,
+                    liked: []
                 }).catch((err) => {
                     console.error("❌ | Error inserting user into database:", err);
                     return { status: 500, response: { success: false, message: "Error inserting user into database" } };
@@ -67,7 +68,20 @@ const data = {
             }
 
             this.methods.getUser = async (id) => {
-                return this.collections.users.findOne({ _id: new ObjectId(id) });
+                try {
+                    var oid
+                    try {
+                        // don't error if the id isn't in the right format
+                        oid = new ObjectId(id)
+                    } catch(_) {
+                        return null
+                    } 
+        
+                    return this.collections.users.findOne({ _id: oid });
+                } catch(err) {
+                    console.log(`❌ | An error occured in the GetMod method: ${err}`)
+                    return null
+                }
             }
 
             this.methods.GetMod = async (id) => {

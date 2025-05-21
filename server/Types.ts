@@ -55,7 +55,8 @@ export type UserData = {
     createdAt: number,
     verified: boolean,
     submission_ban: boolean,
-    level: number
+    level: number,
+    liked: string[]
 }
 
 export type ModData = {
