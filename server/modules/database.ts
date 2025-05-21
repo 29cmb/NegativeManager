@@ -199,7 +199,7 @@ const data = {
                         moderationReason: null,
                         archived: false,
                         downloads: 0,
-                        favorites: 0,
+                        likes: 0,
                         releases: [
                             {
                                 name: releaseInfo.name,
@@ -577,17 +577,17 @@ const data = {
             // thanks copilot
             // how the hell do you do search queries
 
-            this.methods.GetSearch = async (page: number, query?: string, sorting?: "downloads" | "favorites") => {
+            this.methods.GetSearch = async (page: number, query?: string, sorting?: "downloads" | "likes") => {
                 try {
                     const PAGE_SIZE = 20;
                     const filter: any = { archived: { $ne: true }, approved: true };
     
                     let mods;
                     switch(sorting) {
-                        case "favorites":
+                        case "likes":
                             mods = await this.collections.catalog.aggregate([
                                 { $match: filter },
-                                { $sort: { favorites: -1 } },
+                                { $sort: { likes: -1 } },
                                 { $skip: (page - 1) * PAGE_SIZE },
                                 { $limit: PAGE_SIZE }
                             ]).toArray();
@@ -623,7 +623,7 @@ const data = {
                     const user = await this.methods.getUser(req.session.user)
                     if(!user) {
                         return { status: 401, response: { success: false, message: "You must be logged in to submit a comment" } }
-                    }
+                    } 
 
                     await this.collections.comments.insertOne({
                         author: user._id.toString(),
@@ -645,6 +645,45 @@ const data = {
                     return { status: 200, response: { success: true, comments }}
                 } catch (err) {
                     console.error("❌ | Error in GetModComments method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.ChangeModLikeStatus = async(req: StrictRouteRequest, mod: string, status: boolean) => {
+                try {
+                    const dbMod = await this.methods.GetMod(mod)
+                    if(!dbMod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const user = await this.methods.getUser(req.session.user)
+                    if(!user) {
+                        return { status: 401, response: { success: false, message: "You must be logged in to change mod like status" } }
+                    }
+
+                    const modIdStr = dbMod._id.toString();
+                    const alreadyLiked = user.liked.includes(modIdStr);
+
+                    if (
+                        (status === true && alreadyLiked) ||
+                        (status === false && !alreadyLiked)
+                    ) {
+                        return { status: 409, response: { success: false, message: `Like status is already ${status}` } }
+                    }
+
+                    await this.collections.users.updateOne(
+                        { _id: user._id },
+                        status ? { $push: { liked: modIdStr } } : { $pull: { liked: modIdStr } }
+                    );
+
+                    await this.collections.catalog.updateOne(
+                        { _id: dbMod._id },
+                        { $inc: { likes: (status ? 1 : -1) } }
+                    );
+
+                    return { status: 200, response: { success: true, message: `Mod like status changed successfully` }}
+                } catch (err) {
+                    console.error("❌ | Error in ChangeModLikeStatus method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }

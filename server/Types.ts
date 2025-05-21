@@ -37,11 +37,12 @@ export type Database = {
         UpdateReleaseSettings(req: StrictRouteRequest, modId: string, tag: string): RouteMethodReturn,
         ArchiveMod(req: StrictRouteRequest, id: string): RouteMethodReturn,
         ModDownload(id: string, tag: string): Promise<void>,
-        GetSearch(page: number, query?: string, sorting?: "downloads" | "favorites"): Promise<
+        GetSearch(page: number, query?: string, sorting?: "downloads" | "likes"): Promise<
             {success: boolean, mods?: Document[] | WithId<{ success: boolean, mods: [ModData] }>}
         >,
         Comment(req: StrictRouteRequest, mod: string, comment: string): RouteMethodReturn,
-        GetModComments(mod: string): Promise<{ status: number, response: {[key: string]: any}}>
+        GetModComments(mod: string): Promise<{ status: number, response: {[key: string]: any}}>,
+        ChangeModLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn
     },
     init(): Promise<void>
 }
@@ -71,7 +72,7 @@ export type ModData = {
     moderationReason: string | null,
     archived: boolean,
     downloads: number,
-    favorites: number,
+    likes: number,
     releases: ReleaseData[]
 }
 
