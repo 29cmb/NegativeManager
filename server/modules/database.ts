@@ -578,25 +578,23 @@ const data = {
             this.methods.GetSearch = async (page: number, query?: string, sorting?: "downloads" | "likes") => {
                 try {
                     const PAGE_SIZE = 20; 
-                    const filter: any = { archived: { $ne: true }, approved: true };
+                    const search = [
+                        { $sort: { [sorting || "downloads"]: -1 } },
+                        { $skip: (page - 1) * PAGE_SIZE },
+                        { $limit: PAGE_SIZE }
+                    ] as any
                     
                     if (query && query.trim().length > 0) {
-                        filter.$text = { $search: query };
-                    }
-
-                    let sort: any = { [sorting || "downloads"]: -1 };
-                    const mods = await this.collections.catalog.aggregate([
-                        { $search: {
+                        search.push({ $search: {
                             index: "default",
                             text: {
                                 query: query,
                                 path: ["name", "description"]
                             }
-                        }},
-                        { $sort: sort },
-                        { $skip: (page - 1) * PAGE_SIZE },
-                        { $limit: PAGE_SIZE }
-                    ]).toArray()
+                        }})
+                    }
+
+                    const mods = await this.collections.catalog.aggregate(search).toArray()
 
                     return {
                         success: true,
