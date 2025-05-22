@@ -42,7 +42,8 @@ export type Database = {
         >,
         Comment(req: StrictRouteRequest, mod: string, comment: string): RouteMethodReturn,
         GetModComments(mod: string): Promise<{ status: number, response: {[key: string]: any}}>,
-        ChangeModLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn
+        ChangeModLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn,
+        GetDependencies(mod: string, tag: string): Promise<{ status: number, response: {[key: string]: any}}>
     },
     init(): Promise<void>
 }

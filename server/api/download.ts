@@ -30,6 +30,10 @@ export default (app: Express) => {
         if (!visits[id]) visits[id] = [];
         if(!visits[mod._id.toString()].some(value => value === ip) && ip !== undefined) {
             visits[mod._id.toString()].push(ip)
+            setTimeout(() => {
+                visits[mod._id.toString()].filter(v => v !== ip)
+            }, 1000 * 60 * 30)
+            
             database.methods.ModDownload(id, tag)
         }
 

@@ -1,4 +1,4 @@
-import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
+import { MongoClient, ObjectId, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
@@ -679,6 +679,39 @@ const data = {
                     return { status: 200, response: { success: true, message: `Mod like status changed successfully` }}
                 } catch (err) {
                     console.error("❌ | Error in ChangeModLikeStatus method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.GetDependencies = async (mod: string, tag: string) => {
+                try {
+                    const dbMod = await this.methods.GetMod(mod)
+                    if(!dbMod) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const release = await this.methods.GetRelease(mod, tag)
+                    if(!release) {
+                        return { status: 404, response: { success: false, message: "Release not found" } }
+                    }
+                    
+                    const dependencies: any[] = []
+                    release.dependencies.forEach(async (dependency) => {
+                        const depMod = await this.methods.GetMod(dependency.id) as any
+                        if(!depMod) return // just ignore them
+                        
+                        const release = await this.methods.GetRelease(dependency.id, dependency.tag)
+                        if(!release) return // hmm I wonder what we're doing here
+
+                        depMod.releases = undefined
+                        depMod.releaseInfo = release
+
+                        dependencies.push(depMod)
+                    })
+
+                    return { status: 200, response: { success: true, dependencies } }
+                } catch(err) {
+                    console.error("❌ | Error in GetDependencies method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }
