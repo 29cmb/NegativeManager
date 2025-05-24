@@ -2,7 +2,7 @@ import { MongoClient, ObjectId, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
-import { CommentData, Database, ModData, StrictRouteRequest, UserData } from "../Types";
+import { CommentData, Database, ModData, ModpackData, StrictRouteRequest, UserData } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -34,7 +34,7 @@ const data = {
             this.collections.mods.catalog = this.databases.mods.collection<ModData>(process.env.MODS_CATALOG_COLLECTION || "Catalog");
             this.collections.mods.comments = this.databases.mods.collection<CommentData>(process.env.MODS_COMMENTS_COLLECTION || "Comments")
 
-            this.collections.modpacks.catalog = this.databases.modpacks.collection(process.env.MODPACKS_CATALOG_COLLECTION || "Catalog")
+            this.collections.modpacks.catalog = this.databases.modpacks.collection<ModpackData>(process.env.MODPACKS_CATALOG_COLLECTION || "Catalog")
             this.collections.modpacks.comments = this.databases.modpacks.collection(process.env.MODPACKS_COMMENTS_COLLECTION || "Comments")
 
             // initialize methods
@@ -108,6 +108,22 @@ const data = {
                 const mod = await this.methods.GetMod(modId)
                 if (!mod || !Array.isArray(mod.releases)) return null;
                 return mod.releases.find((release: any) => release.tag === tag) || null;
+            }
+
+            this.methods.GetModpack = async(modpackId: string) => {
+                try {
+                    var oid
+                    try {
+                        oid = new ObjectId(modpackId)
+                    } catch(_) {
+                        return null
+                    } 
+
+                    return this.collections.modpacks.catalog.findOne({ _id: oid })
+                } catch(err) {
+                    console.log(`❌ | An error occured in the GetMod method: ${err}`)
+                    return null
+                }
             }
 
             this.methods.login = async (req, username, password) => {
@@ -235,7 +251,7 @@ const data = {
                             status: 403, 
                             response: {
                                 success: false,
-                                message: "You do not have permission to accept mods",
+                                message: "You do not have permission to change the approval status of mods",
                             }
                         };
                     }
@@ -749,6 +765,7 @@ const data = {
                         name,
                         description,
                         author: req.session.user,
+                        icon,
                         mods,
                         downloads: 0,
                         likes: 0,
@@ -760,6 +777,35 @@ const data = {
                     return { status: 200, response: { success: true, message: "Modpack submitted successfully" } }
                 } catch(err) {
                     console.error("❌ | Error in CreateModpack method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.ChangeModpackApprovalStatus = async (req, id, status, reason) => {
+                try {
+                    const user = await this.methods.getUser(req.session.user);
+                    if(!user || user.level < 1) {
+                        return { 
+                            status: 403, 
+                            response: {
+                                success: false,
+                                message: "You do not have permission to change the approval status of modpacks",
+                            }
+                        };
+                    }
+
+                    const modpack = await this.methods.GetModpack(id)
+                    if(!modpack) {
+                        return { status: 404, response: { success: false, message: "Modpack not found" } };
+                    }
+
+                    await this.collections.modpacks.catalog.updateOne({ _id: new ObjectId(id) }, {
+                        $set: { approved: status, reviewed: true, moderationReason: reason || null }
+                    })
+
+                    return { status: 200, response: { success: true, message: "Modpack approval status changed" } }
+                } catch (err) {
+                    console.error("❌ | Error in ChangeModApprovalStatus method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }

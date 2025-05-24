@@ -25,7 +25,7 @@ export type Database = {
             comments: Collection<CommentData>
         },
         modpacks: {
-            catalog: Collection,
+            catalog: Collection<ModpackData>,
             comments: Collection
         }
     },
@@ -35,6 +35,7 @@ export type Database = {
         getUser(id: string): Promise<WithId<Document & UserData> | null>
         GetMod(id: string): Promise<WithId<Document & ModData> | null>
         GetRelease(modId: string, tag: string): Promise<ReleaseData | null>,
+        GetModpack(modpackId: string): Promise<WithId<Document & ModpackData> | null>
         login(req: StrictRouteRequest, username: string, password: string): RouteMethodReturn
         submit(req: StrictRouteRequest, name: string, description: string, icon: string, dependencies: [{ id: string, tag: string }], source_code: string, github_release_link: string): RouteMethodReturn
         ChangeModApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn
@@ -52,7 +53,8 @@ export type Database = {
         GetModComments(mod: string): Promise<{ status: number, response: {[key: string]: any}}>,
         ChangeModLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn,
         GetDependencies(mod: string, tag: string): Promise<{ status: number, response: {[key: string]: any}}>,
-        CreateModpack(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]): RouteMethodReturn
+        CreateModpack(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]): RouteMethodReturn,
+        ChangeModpackApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn
     },
     init(): Promise<void>
 }
@@ -84,6 +86,19 @@ export type ModData = {
     downloads: number,
     likes: number,
     releases: ReleaseData[]
+}
+
+export type ModpackData = {
+    name: string,
+    description: string,
+    author: string
+    icon: string,
+    mods: [{ id: string, tag: string }],
+    downloads: number,
+    likes: number,
+    approved: boolean,
+    reviewed: boolean,
+    moderationReason: string | null
 }
 
 export type ReleaseData = {
