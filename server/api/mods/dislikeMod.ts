@@ -1,6 +1,6 @@
 import { Express } from "express"
 import database from "../../modules/database"
-import { RouteRequest, StrictRouteRequest } from "../Types"
+import { RouteRequest, StrictRouteRequest } from "../../Types"
 
 export default (app: Express) => {
     app.post("/api/v1/mods/dislike", (req: RouteRequest, res) => {

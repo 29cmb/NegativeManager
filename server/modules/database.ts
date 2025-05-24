@@ -721,10 +721,55 @@ const data = {
                 }
             }
 
+            this.methods.CreateModpack = async(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]) => {
+                try {
+                    const user = await this.collections.accounts.users.findOne({ $id: new ObjectId(req.session.user) })
+                    if(!user) {
+                        return { status: 401, response: { success: false, message: "You must be logged in to create a modpack" } }
+                    }
+
+                    const existingModpack = await this.collections.modpacks.catalog.findOne({ author: req.session.user })
+                    if(existingModpack) {
+                        return { status: 409, response: { success: false, message: "You already have a modpack with this name" } }
+                    }
+
+                    for(const mod of mods) {
+                        const dbMod = await this.methods.GetMod(mod.id)
+                        if(!dbMod) {
+                            return { status: 404, response: { success: false, message: `Mod with id ${mod.id} does not exist` } }
+                        }
+
+                        const release = await this.methods.GetRelease(mod.id, mod.tag)
+                        if(!release) {
+                            return { status: 404, response: { success: false, message: `Mod with id ${mod.id} does not have a release with a tag ${mod.tag}` } }
+                        }
+                    }
+
+                    await this.collections.modpacks.catalog.insertOne({ 
+                        name,
+                        description,
+                        author: req.session.user,
+                        mods,
+                        downloads: 0,
+                        likes: 0,
+                        approved: false,
+                        reviewed: false,
+                        moderationReason: null
+                    })
+
+                    return { status: 200, response: { success: true, message: "Modpack submitted successfully" } }
+                } catch(err) {
+                    console.error("❌ | Error in CreateModpack method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
             await this.databases.accounts.command({ ping: 1 })
             console.log("🏓 | Pinged accounts database")
             await this.databases.mods.command({ ping: 1 })
             console.log("🏓 | Pinged mods database")
+            await this.databases.modpacks.command({ ping: 1 })
+            console.log("🏓 | Pinged modpacks database")
             console.log("🚀 | Connected to MongoDB")
         } catch (error) {
             console.error("❌ | Error connecting to MongoDB:", error);
