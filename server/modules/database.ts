@@ -2,7 +2,7 @@ import { MongoClient, ObjectId, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
-import { CommentData, Database, ModData, StrictRouteRequest } from "../Types";
+import { CommentData, Database, ModData, StrictRouteRequest, UserData } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -16,7 +16,7 @@ const data = {
     uri,
     client,
     databases: {},
-    collections: {},
+    collections: { accounts: {}, mods: {}, modpacks: {} },
     methods: {},
     async init() {
         try {
@@ -25,12 +25,17 @@ const data = {
             // database setup
             this.databases.accounts = client.db(process.env.ACCOUNTS_DATABASE || "Accounts");
             this.databases.mods = client.db(process.env.MODS_DATABASE || "Mods");
+            this.databases.modpacks = client.db(process.env.MODPACKS_DATABASE || "Modpacks")
 
             // collections setup
-            this.collections.users = this.databases.accounts.collection(process.env.USERS_COLLECTION || "Users");
-            this.collections.sessions = this.databases.accounts.collection(process.env.SESSIONS_COLLECTION || "Sessions");
-            this.collections.catalog = this.databases.mods.collection<ModData>(process.env.CATALOG_COLLECTION || "Catalog");
-            this.collections.comments = this.databases.mods.collection<CommentData>(process.env.COMMENTS_COLLECTION || "Comments")
+            this.collections.accounts.users = this.databases.accounts.collection<UserData>(process.env.USERS_COLLECTION || "Users");
+            this.collections.accounts.sessions = this.databases.accounts.collection(process.env.SESSIONS_COLLECTION || "Sessions");
+
+            this.collections.mods.catalog = this.databases.mods.collection<ModData>(process.env.MODS_CATALOG_COLLECTION || "Catalog");
+            this.collections.mods.comments = this.databases.mods.collection<CommentData>(process.env.MODS_COMMENTS_COLLECTION || "Comments")
+
+            this.collections.modpacks.catalog = this.databases.modpacks.collection(process.env.MODPACKS_CATALOG_COLLECTION || "Catalog")
+            this.collections.modpacks.comments = this.databases.modpacks.collection(process.env.MODPACKS_COMMENTS_COLLECTION || "Comments")
 
             // initialize methods
             this.methods.signup = async (email, username, password) => {
@@ -44,7 +49,7 @@ const data = {
                     return { status: 500, response: { success: false, message: "Error hashing password" } }
                 }
 
-                await data.collections.users.insertOne({
+                await this.collections.accounts.users.insertOne({
                     email,
                     username,
                     password: pw,
@@ -62,7 +67,7 @@ const data = {
             }
 
             this.methods.GetUserFromUsername = async (username) => {
-                return this.collections.users.findOne({ username });
+                return this.collections.accounts.users.findOne({ username });
             }
 
             this.methods.getUser = async (id) => {
@@ -75,7 +80,7 @@ const data = {
                         return null
                     } 
         
-                    return this.collections.users.findOne({ _id: oid });
+                    return this.collections.accounts.users.findOne({ _id: oid });
                 } catch(err) {
                     console.log(`❌ | An error occured in the GetMod method: ${err}`)
                     return null
@@ -92,7 +97,7 @@ const data = {
                         return null
                     } 
 
-                    return this.collections.catalog.findOne({ _id: oid })
+                    return this.collections.mods.catalog.findOne({ _id: oid })
                 } catch(err) {
                     console.log(`❌ | An error occured in the GetMod method: ${err}`)
                     return null
@@ -122,7 +127,7 @@ const data = {
 
             this.methods.submit = async (req, name, description, icon, dependencies, source_code, github_release_link) => {
                 try {
-                    const existingMod = await this.collections.catalog.findOne({ name, author: req.session.user })
+                    const existingMod = await this.collections.mods.catalog.findOne({ name, author: req.session.user })
                     if(existingMod) {
                         return { status: 409, response: { success: false, message: "You already have a mod of the same name" } }
                     }
@@ -185,7 +190,7 @@ const data = {
                     }
 
                     // Hey me! Maybe don't forget to write the part of the method that actually inserts the mod into the database? That would be pretty cool, right?
-                    await this.collections.catalog.insertOne({
+                    await this.collections.mods.catalog.insertOne({
                         name,
                         description,
                         icon,
@@ -241,7 +246,7 @@ const data = {
                     }
 
                     // Hey guys! Quick tip! When you rework functions, add the funtionality to the rework!!!
-                    await this.collections.catalog.updateOne({ _id: new ObjectId(id) }, {
+                    await this.collections.mods.catalog.updateOne({ _id: new ObjectId(id) }, {
                         $set: { approved: status, reviewed: true, moderationReason: reason || null }
                     })
 
@@ -274,7 +279,7 @@ const data = {
                     //     return { status: 409, response: { success: false, message: "Mod already has that approval status" } };
                     // }
 
-                    // await this.collections.catalog.updateOne({ $id: id }, { $set: { approved: status } }).catch((err) => {
+                    // await this.collections.mods.catalog.updateOne({ $id: id }, { $set: { approved: status } }).catch((err) => {
                     //     console.error("❌ | Error updating mod approval status:", err);
                     //     return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
                     // })
@@ -288,7 +293,7 @@ const data = {
                         return { status: 409, response: { success: false, message: "Release already has that approval status" } };
                     }
 
-                    await this.collections.catalog.findOneAndUpdate(
+                    await this.collections.mods.catalog.findOneAndUpdate(
                         { _id: new ObjectId(id), "releases.tag": tag }, 
                         { $set: { 
                             "releases.$.approved": status, 
@@ -303,7 +308,7 @@ const data = {
                         return { status: 500, response: { success: false, message: "Error updating mod approval status" } };
                     }
 
-                    await this.collections.catalog.updateOne(
+                    await this.collections.mods.catalog.updateOne(
                         { _id: new ObjectId(id) },
                         { $set: 
                             { 
@@ -332,7 +337,7 @@ const data = {
                         };
                     }
     
-                    const mods = await this.collections.catalog.find({ updateApprovalPending: true, $or: [{ modApproved: false }] }).toArray();
+                    const mods = await this.collections.mods.catalog.find({ updateApprovalPending: true, $or: [{ modApproved: false }] }).toArray();
                     if(!mods) {
                         return { status: 404, response: { success: false, message: "No mods found" } };
                     }
@@ -365,7 +370,7 @@ const data = {
                     return { status: 403, response: { success: false, message: "You cannot ban this user" } };
                 }
 
-                return await this.collections.users.updateOne({ _id: new ObjectId(id) }, { $set: { submission_ban: status } }).then(() => {
+                return await this.collections.accounts.users.updateOne({ _id: new ObjectId(id) }, { $set: { submission_ban: status } }).then(() => {
                     return {
                         status: 200,
                         response: {
@@ -424,7 +429,7 @@ const data = {
                         "icon"
                     ]
     
-                    await this.collections.catalog.updateOne({ _id: new ObjectId(modId) }, {
+                    await this.collections.mods.catalog.updateOne({ _id: new ObjectId(modId) }, {
                         $set: {
                             ...(Object.fromEntries(
                                 Object.entries(settings).filter(([key]) => allowedFields.includes(key))
@@ -518,7 +523,7 @@ const data = {
                         return { status: 500, response: { success: false, message: "Error calculating checksum" } }
                     }
 
-                    await this.collections.catalog.updateOne(
+                    await this.collections.mods.catalog.updateOne(
                         { _id: new ObjectId(modId), "releases.tag": tag },
                         {
                             $set: {
@@ -550,7 +555,7 @@ const data = {
                         return { status: 403, response: { success: false, message: "You do not have permission to archive this mod" } }
                     }
 
-                    await this.collections.catalog.updateOne({ _id: new ObjectId(id) }, {$set: { archived: true }})
+                    await this.collections.mods.catalog.updateOne({ _id: new ObjectId(id) }, {$set: { archived: true }})
                     return { status: 200, response: { success: true, message: "Mod archived successfully"}}
                 } catch(err) {
                     console.error("❌ | Error in ArchiveMod method:", err);
@@ -565,7 +570,7 @@ const data = {
                 const release = await this.methods.GetRelease(id, tag)
                 if(!release) return
 
-                await this.collections.catalog.updateOne(
+                await this.collections.mods.catalog.updateOne(
                     { _id: new ObjectId(id), "releases.tag": tag },
                     { $inc: { "releases.$.downloads": 1 }}
                 );
@@ -594,7 +599,7 @@ const data = {
                         }})
                     }
 
-                    const mods = await this.collections.catalog.aggregate(search).toArray()
+                    const mods = await this.collections.mods.catalog.aggregate(search).toArray()
 
                     return {
                         success: true,
@@ -620,7 +625,7 @@ const data = {
                         return { status: 401, response: { success: false, message: "You must be logged in to submit a comment" } }
                     } 
 
-                    await this.collections.comments.insertOne({
+                    await this.collections.mods.comments.insertOne({
                         author: user._id.toString(),
                         mod: dbMod._id.toString(),
                         content: comment,
@@ -636,7 +641,7 @@ const data = {
 
             this.methods.GetModComments = async(mod: string) => {
                 try {
-                    const comments = await this.collections.comments.find({ mod }).toArray()
+                    const comments = await this.collections.mods.comments.find({ mod }).toArray()
                     return { status: 200, response: { success: true, comments }}
                 } catch (err) {
                     console.error("❌ | Error in GetModComments method:", err);
@@ -666,12 +671,12 @@ const data = {
                         return { status: 409, response: { success: false, message: `Like status is already ${status}` } }
                     }
 
-                    await this.collections.users.updateOne(
+                    await this.collections.accounts.users.updateOne(
                         { _id: user._id },
                         status ? { $push: { liked: modIdStr } } : { $pull: { liked: modIdStr } }
                     );
 
-                    await this.collections.catalog.updateOne(
+                    await this.collections.mods.catalog.updateOne(
                         { _id: dbMod._id },
                         { $inc: { likes: (status ? 1 : -1) } }
                     );

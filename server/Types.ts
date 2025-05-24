@@ -16,10 +16,18 @@ export type Database = {
     client: MongoClient,
     databases: {[key: string]: Db},
     collections: {
-        users: Collection<UserData>,
-        sessions: Collection,
-        catalog: Collection<ModData>,
-        comments: Collection<CommentData>
+        accounts: {
+            users: Collection<UserData>,
+            sessions: Collection,
+        },
+        mods: {
+            catalog: Collection<ModData>,
+            comments: Collection<CommentData>
+        },
+        modpacks: {
+            catalog: Collection,
+            comments: Collection
+        }
     },
     methods: {
         signup(email: string, username: string, password: string): RouteMethodReturn
