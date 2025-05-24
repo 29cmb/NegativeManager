@@ -1,13 +1,13 @@
 import { Express } from 'express';
-import database from '../modules/database';
-import { RouteRequest, StrictRouteRequest } from '../Types';
+import database from '../../modules/database';
+import { RouteRequest, StrictRouteRequest } from '../../Types';
 
 // TODO: Test this endpoint, unable to store cookies in postman
 export default (app: Express) => {
-    app.post("/api/v1/mods/accept", async (req: RouteRequest, res) => {
+    app.post("/api/v1/mods/deny", async (req: RouteRequest, res) => {
         const { mod } = req.body;
         if (
-            mod === undefined 
+            mod === undefined
             || typeof mod !== "string"
         ) {
             res.status(400).json({
@@ -20,7 +20,7 @@ export default (app: Express) => {
         if (!req.session?.user) {
             res.status(401).json({
                 success: false,
-                message: "You must be logged in to accept a mod",
+                message: "You must be logged in to deny a mod",
             });
             return;
         }
@@ -28,14 +28,14 @@ export default (app: Express) => {
         database.methods.ChangeModApprovalStatus(
             req as StrictRouteRequest,
             mod,
-            true
+            false
         ).then((result: { status: number, response: { success: boolean, message: string } }) => {
             res.status(result.status).json(result.response);
         })
     })
-
+    
     return {
-        route: "/api/v1/mods/accept",
+        route: "/api/v1/mods/deny",
         method: "POST",
     }
 }

@@ -1,6 +1,6 @@
 import { Express } from 'express';
-import database from '../modules/database';
-import { RouteRequest, StrictRouteRequest } from '../Types';
+import database from '../../modules/database';
+import { RouteRequest, StrictRouteRequest } from '../../Types';
 
 // TODO: Test this endpoint, unable to store cookies in postman
 export default (app: Express) => {

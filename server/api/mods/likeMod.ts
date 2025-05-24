@@ -1,9 +1,9 @@
 import { Express } from "express"
-import database from "../modules/database"
+import database from "../../modules/database"
 import { RouteRequest, StrictRouteRequest } from "../Types"
 
 export default (app: Express) => {
-    app.post("/api/v1/mods/dislike", (req: RouteRequest, res) => {
+    app.post("/api/v1/mods/like", (req: RouteRequest, res) => {
         const { mod } = req.body
         if(!mod || typeof mod !== "string") {
             res.status(400).json({ success: false, message: "Required fields not provided or not formatted properly" })
@@ -11,16 +11,16 @@ export default (app: Express) => {
         }
 
         if(!req.session?.user) {
-            res.status(401).json({ success: false, message: "You must be logged in to dislike a mod" })
+            res.status(401).json({ success: false, message: "You must be logged in to like a mod" })
         }
         
-        database.methods.ChangeModLikeStatus(req as StrictRouteRequest, mod, false).then((result: {status: number, response: {success: boolean, message: string}}) => {
+        database.methods.ChangeModLikeStatus(req as StrictRouteRequest, mod, true).then((result: {status: number, response: {success: boolean, message: string}}) => {
             res.status(result.status).json(result.response)
         })
     })
 
     return {
         method: "POST",
-        route: "/api/v1/mods/dislike"
+        route: "/api/v1/mods/like"
     }
 }

@@ -1,5 +1,5 @@
 import { Express } from "express"
-import database from "../modules/database"
+import database from "../../modules/database"
 import { RouteRequest, StrictRouteRequest } from "../Types";
 
 const githubSourceRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)(?:\.git)?$/;

@@ -29,10 +29,25 @@ app.use(session({
 database.init()
 
 const apiPath = path.join(__dirname, "api")
-const apiFiles = fs.readdirSync(apiPath).filter(file => file.endsWith('.ts'))
+let apiFiles: string[] = []
 
-for (const file of apiFiles) {
-    const filePath = path.join(apiPath, file);
+const walk = [apiPath]
+while (walk.length) {
+    const dir = walk.pop()!
+    const files = fs.readdirSync(dir)
+    for (const file of files) {
+        const filePath = path.join(dir, file)
+        const stat = fs.statSync(filePath)
+
+        if (stat.isDirectory()) {
+            walk.push(filePath)
+        } else if (file.endsWith('.ts') || file.endsWith('.js')) {
+            apiFiles.push(filePath)
+        }
+    }
+}
+
+for (const filePath of apiFiles) {
     import(filePath).then((module) => {
         const data = module.default(app);
         if (data?.method && data.route) {
@@ -44,7 +59,3 @@ for (const file of apiFiles) {
         console.error(`❌ | Failed to load API route '${filePath}':`, err);
     });
 }
-
-app.listen(process.env.PORT || 3001, () => {
-    console.log(`✅ | Server is running on port ${process.env.PORT || 3001}`);
-});

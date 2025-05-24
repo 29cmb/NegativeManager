@@ -1,6 +1,6 @@
 import { Express, Request } from 'express';
-import database from '../modules/database';
-import { RouteRequest, StrictRouteRequest } from '../Types';
+import database from '../../modules/database';
+import { RouteRequest, StrictRouteRequest } from '../../Types';
 
 export default (app: Express) => {
     app.get("/api/v1/mods/queue", async (req: RouteRequest, res) => {

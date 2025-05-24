@@ -1,5 +1,5 @@
 import { Express, Response } from "express";
-import database from "../modules/database";
+import database from "../../modules/database";
 import { RouteRequest, StrictRouteRequest } from "../Types";
 
 const githubReleaseRegex = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/releases\/tag\/([^\/]+)$/;

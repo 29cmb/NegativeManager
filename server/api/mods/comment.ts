@@ -1,6 +1,6 @@
 import { Express } from "express"
 import { RouteRequest, StrictRouteRequest } from "../Types"
-import database from "../modules/database"
+import database from "../../modules/database"
 
 export default (app: Express) => {
     app.post("/api/v1/mods/comment", async (req: RouteRequest, res) => {

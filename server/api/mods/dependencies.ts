@@ -1,5 +1,5 @@
 import { Express } from "express"
-import database from "../modules/database"
+import database from "../../modules/database"
 
 export default (app: Express) => {
     app.get("/api/v1/mods/:id/:tag/dependencies", async (req, res) => {
@@ -29,6 +29,6 @@ export default (app: Express) => {
 
     return {
         method: "GET",
-        route: "/api/v1/mods/:id/dependencies"
+        route: "/api/v1/mods/:id/:tag/dependencies"
     }
 }

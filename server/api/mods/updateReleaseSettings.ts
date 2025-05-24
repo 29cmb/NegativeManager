@@ -1,5 +1,5 @@
 import { Express } from "express"
-import database from "../modules/database"
+import database from "../../modules/database"
 import { RouteRequest, StrictRouteRequest } from "../Types"
 
 export default (app: Express) => {

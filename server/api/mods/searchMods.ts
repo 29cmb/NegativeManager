@@ -1,5 +1,5 @@
 import { Express } from "express"
-import database from "../modules/database"
+import database from "../../modules/database"
 
 export default (app: Express) => {
     app.get("/api/v1/mods/search/:query/:page{/:sort}", async (req, res) => {

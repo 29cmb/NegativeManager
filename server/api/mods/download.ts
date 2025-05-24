@@ -1,6 +1,6 @@
 import { Express } from "express"
 import axios from "axios"
-import database from "../modules/database"
+import database from "../../modules/database"
 import crypto from "crypto"
 
 const visits = {} as {[mod: string]: string[]}

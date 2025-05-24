@@ -1,6 +1,6 @@
 import { Express } from "express"
-import database from "../modules/database"
-import { RouteRequest } from "../Types";
+import database from "../../modules/database"
+import { RouteRequest } from "../../Types";
 export default (app: Express) => {
     app.post("/api/v1/signup", (req: RouteRequest, res) => {
         const { email, username, password } = req.body;

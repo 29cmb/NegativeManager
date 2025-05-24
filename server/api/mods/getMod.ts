@@ -1,5 +1,5 @@
 import { Express } from "express"
-import database from "../modules/database"
+import database from "../../modules/database"
 export default (app: Express) => {
     app.get("/api/v1/mods/info/:id", async (req, res) => {
         const { id } = req.params
