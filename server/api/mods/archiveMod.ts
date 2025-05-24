@@ -3,7 +3,7 @@ import { RouteRequest, StrictRouteRequest } from "../../Types"
 import database from "../../modules/database"
 export default (app: Express) => {
     app.post("/api/v1/mods/archive", (req: RouteRequest, res) => {
-        const { id } = req.body
+       const { id } = req.body
 
         if(id === undefined || typeof id !== "string") {
             res.status(400).json({ success: false, message: "Required fields not provided or not formatted properly" })

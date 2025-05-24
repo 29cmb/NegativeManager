@@ -739,12 +739,7 @@ const data = {
 
             this.methods.CreateModpack = async(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]) => {
                 try {
-                    const user = await this.collections.accounts.users.findOne({ $id: new ObjectId(req.session.user) })
-                    if(!user) {
-                        return { status: 401, response: { success: false, message: "You must be logged in to create a modpack" } }
-                    }
-
-                    const existingModpack = await this.collections.modpacks.catalog.findOne({ author: req.session.user })
+                    const existingModpack = await this.collections.modpacks.catalog.findOne({ author: req.session.user, name })
                     if(existingModpack) {
                         return { status: 409, response: { success: false, message: "You already have a modpack with this name" } }
                     }
@@ -808,6 +803,13 @@ const data = {
                     console.error("❌ | Error in ChangeModApprovalStatus method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
+            }
+
+            this.methods.ModpackDownload = async(id: string) => {
+                const modpack = await this.methods.GetMod(id)
+                if(!modpack) return
+
+                await this.collections.modpacks.catalog.updateOne({ $id: new ObjectId(id) }, {$inc: { downloads: 1 }})
             }
 
             await this.databases.accounts.command({ ping: 1 })

@@ -1,6 +1,6 @@
 import "dotenv/config"
 
-import express, { Express } from 'express';
+import express, { Express, Request } from 'express';
 import * as bodyParser from 'body-parser';
 import fs from 'fs';
 import path from 'path';
@@ -11,8 +11,33 @@ import sessionSave from 'connect-mongodb-session';
 const MongoDBStore = sessionSave(session);
 
 const app: Express = express();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req: Request, res, next) => {
+    if(req.method !== "POST"){ 
+        next() 
+        return 
+    }
+
+    if(!req.body) {
+        res.status(400).json({ success: false, message: "Body not provided or isn't valid json" })
+        return
+    }
+
+    next()
+})
+
+app.use((err: any, req: Request, res: any, next: any) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+        res.status(400).json({ success: false, message: "Body not provided or isn't valid json" })
+        return
+    }
+
+    res.status(500).json({ success: false, message: "Internal server error" })
+    console.log(`❌ | Express error: ${err}`)
+})
+
 app.set("trust proxy", 1);
 
 app.use(session({
@@ -59,3 +84,7 @@ for (const filePath of apiFiles) {
         console.error(`❌ | Failed to load API route '${filePath}':`, err);
     });
 }
+
+app.listen(process.env.PORT || 3001, () => {
+    console.log(`🌟 | Server is running on port ${process.env.PORT || 3001}`);
+});

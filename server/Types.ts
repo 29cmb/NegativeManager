@@ -2,7 +2,7 @@ import { Request } from "express"
 import { Collection, Db, MongoClient, WithId, Document } from "mongodb"
 
 export type RouteRequest = Request & {
-    body: { [key: string]: string },
+    body?: { [key: string]: string },
     session?: { user?: string }
 }
 
@@ -54,7 +54,8 @@ export type Database = {
         ChangeModLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn,
         GetDependencies(mod: string, tag: string): Promise<{ status: number, response: {[key: string]: any}}>,
         CreateModpack(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]): RouteMethodReturn,
-        ChangeModpackApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn
+        ChangeModpackApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn,
+        ModpackDownload(id: string): Promise<void>
     },
     init(): Promise<void>
 }
