@@ -61,6 +61,8 @@ export type Database = {
         GetModpackSearch(page: number, query?: string, sorting?: "downloads" | "likes"): Promise<
             {success: boolean, modpacks?: Document[] | WithId<{ success: boolean, modpacks: [ModpackData] }>}
         >,
+        ModpackComment(req: StrictRouteRequest, modpack: string, comment: string): RouteMethodReturn,
+        GetModpackComments(modpack: string): Promise<{ status: number, response: {[key: string]: any}}>,
     },
     init(): Promise<void>
 }

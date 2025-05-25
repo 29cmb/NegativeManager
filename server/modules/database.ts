@@ -910,6 +910,42 @@ const data = {
                 }
             }
 
+            this.methods.ModpackComment = async(req: StrictRouteRequest, modpack: string, comment: string) => {
+                try {
+                    const dbModpack = await this.methods.GetMod(modpack)
+                    if(!dbModpack) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const user = await this.methods.getUser(req.session.user)
+                    if(!user) {
+                        return { status: 401, response: { success: false, message: "You must be logged in to submit a comment" } }
+                    } 
+
+                    await this.collections.modpacks.comments.insertOne({
+                        author: user._id.toString(),
+                        modpack: dbModpack._id.toString(),
+                        content: comment,
+                        created_at: Date.now()
+                    })
+
+                    return { status: 200, response: { success: true, message: "Comment posted successfully" } }
+                } catch (err) {
+                    console.error("❌ | Error in Comment method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.GetModpackComments = async (modpack: string) => {
+                try {
+                    const comments = await this.collections.modpacks.comments.find({ modpack }).toArray()
+                    return { status: 200, response: { success: true, comments }}
+                } catch (err) {
+                    console.error("❌ | Error in GetModpackComments method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
             await this.databases.accounts.command({ ping: 1 })
             console.log("🏓 | Pinged accounts database")
             await this.databases.mods.command({ ping: 1 })

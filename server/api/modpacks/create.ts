@@ -31,10 +31,10 @@ export default (app: Express) => {
             return
         }
 
-        // if(!req.session?.user) {
-        //     res.status(401).json({ success: false, message: "You must be logged in to create a modpack" })
-        //     return
-        // }
+        if(!req.session?.user) {
+            res.status(401).json({ success: false, message: "You must be logged in to create a modpack" })
+            return
+        }
 
         database.methods.CreateModpack(
             req as StrictRouteRequest,
