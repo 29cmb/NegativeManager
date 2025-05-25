@@ -654,11 +654,11 @@ const data = {
                     ] as any
                     
                     if (query && query.trim().length > 0) {
-                        search.push({ $search: {
+                        search.splice(0, 0, { $search: {
                             index: "default",
-                            text: {
-                                query: query,
-                                path: ["name", "description"]
+                            autocomplete: {
+                                query,
+                                path: "name"
                             }
                         }})
                     }
@@ -887,11 +887,11 @@ const data = {
                     ] as any
                     
                     if (query && query.trim().length > 0) {
-                        search.push({ $search: {
+                        search.splice(0, 0, { $search: {
                             index: "default",
-                            text: {
-                                query: query,
-                                path: ["name", "description"]
+                            autocomplete: {
+                                query,
+                                path: "name"
                             }
                         }})
                     }
