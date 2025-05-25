@@ -5,6 +5,7 @@ import { dir as tmpDir } from "tmp-promise"
 import fs from "fs"
 import path from "path"
 import axios from "axios"
+import crypto from "crypto"
 
 const visits = {} as {[mod: string]: string[]}
 
@@ -35,6 +36,21 @@ export default (app: Express) => {
                 if(!modInModpack) continue
                 const release = await database.methods.GetRelease(mod.id, mod.tag)
                 if(!release || !release.download) continue
+
+                let checksum;
+                try {
+                    const response = await axios.get(release.download, { responseType: "arraybuffer" })
+                    const hash = crypto.createHash('sha256')
+                    hash.update(response.data)
+                    checksum = hash.digest('hex')
+                } catch (err) {
+                    continue
+                }
+
+                if(checksum !== release.checksum) {
+                    continue
+                }
+
                 const response = await axios.get(release.download, { responseType: "arraybuffer" })
                 const zip = new AdmZip(response.data)
                 zip.extractAllTo(tempDirPath, true)
