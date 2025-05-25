@@ -1,4 +1,4 @@
-import { MongoClient, ObjectId, ServerApiVersion, WithId } from "mongodb";
+import { AggregateOptions, MongoClient, ObjectId, ServerApiVersion, WithId } from "mongodb";
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
@@ -600,6 +600,7 @@ const data = {
                 try {
                     const PAGE_SIZE = 20; 
                     const search = [
+                        { $match: { approved: true } },
                         { $sort: { [sorting || "downloads"]: -1 } },
                         { $skip: (page - 1) * PAGE_SIZE },
                         { $limit: PAGE_SIZE }
@@ -616,6 +617,21 @@ const data = {
                     }
 
                     const mods = await this.collections.mods.catalog.aggregate(search).toArray()
+                    for (const mod of mods) {
+                        // thanks copilot! I have absolutely no idea what a delete statement is or does! :D
+                        delete mod.approved;
+                        delete mod.reviewed;
+                        delete mod.moderationReason;
+                        delete mod.updateApprovalPending;
+
+                        if (Array.isArray(mod.releases)) {
+                            for (const release of mod.releases) {
+                                delete release.approved;
+                                delete release.reviewed;
+                                delete release.moderationReason;
+                            }
+                        }
+                    }
 
                     return {
                         success: true,
@@ -810,6 +826,41 @@ const data = {
                 if(!modpack) return
 
                 await this.collections.modpacks.catalog.updateOne({ $id: new ObjectId(id) }, {$inc: { downloads: 1 }})
+            }
+
+            this.methods.GetModpackSearch = async (page: number, query?: string, sorting?: "downloads" | "likes") => {
+                try {
+                    const PAGE_SIZE = 20; 
+                    const search = [
+                        { $match: { approved: true } },
+                        { $sort: { [sorting || "downloads"]: -1 } },
+                        { $skip: (page - 1) * PAGE_SIZE },
+                        { $limit: PAGE_SIZE },
+                        { $project: { approved: 0, reviewed: 0, moderationReason: 0 } }
+                    ] as any
+                    
+                    if (query && query.trim().length > 0) {
+                        search.push({ $search: {
+                            index: "default",
+                            text: {
+                                query: query,
+                                path: ["name", "description"]
+                            }
+                        }})
+                    }
+
+                    const modpacks = await this.collections.modpacks.catalog.aggregate(search).toArray()
+
+                    return {
+                        success: true,
+                        modpacks
+                    }
+                } catch(err) {
+                    console.error("❌ | Error in GetSearch method:", err);
+                    return {
+                        success: false
+                    }
+                }
             }
 
             await this.databases.accounts.command({ ping: 1 })

@@ -55,7 +55,10 @@ export type Database = {
         GetDependencies(mod: string, tag: string): Promise<{ status: number, response: {[key: string]: any}}>,
         CreateModpack(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]): RouteMethodReturn,
         ChangeModpackApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn,
-        ModpackDownload(id: string): Promise<void>
+        ModpackDownload(id: string): Promise<void>,
+        GetModpackSearch(page: number, query?: string, sorting?: "downloads" | "likes"): Promise<
+            {success: boolean, modpacks?: Document[] | WithId<{ success: boolean, modpacks: [ModpackData] }>}
+        >,
     },
     init(): Promise<void>
 }
