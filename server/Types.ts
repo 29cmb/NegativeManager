@@ -63,6 +63,7 @@ export type Database = {
         >,
         ModpackComment(req: StrictRouteRequest, modpack: string, comment: string): RouteMethodReturn,
         GetModpackComments(modpack: string): Promise<{ status: number, response: {[key: string]: any}}>,
+        ChangeModpackLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn,
     },
     init(): Promise<void>
 }
@@ -77,7 +78,8 @@ export type UserData = {
     verified: boolean,
     submission_ban: boolean,
     level: number,
-    liked: string[]
+    likedMods: string[],
+    likedModpacks: string[]
 }
 
 export type ModData = {

@@ -57,7 +57,8 @@ const data = {
                     verified: false,
                     submission_ban: false,
                     level: 0,
-                    liked: []
+                    likedMods: [],
+                    likedModpacks: []
                 }).catch((err) => {
                     console.error("❌ | Error inserting user into database:", err);
                     return { status: 500, response: { success: false, message: "Error inserting user into database" } };
@@ -741,7 +742,7 @@ const data = {
                     }
 
                     const modIdStr = dbMod._id.toString();
-                    const alreadyLiked = user.liked.includes(modIdStr);
+                    const alreadyLiked = user.likedMods.includes(modIdStr);
 
                     if (
                         (status === true && alreadyLiked) ||
@@ -752,7 +753,7 @@ const data = {
 
                     await this.collections.accounts.users.updateOne(
                         { _id: user._id },
-                        status ? { $push: { liked: modIdStr } } : { $pull: { liked: modIdStr } }
+                        status ? { $push: { likedMods: modIdStr } } : { $pull: { likedMods: modIdStr } }
                     );
 
                     await this.collections.mods.catalog.updateOne(
@@ -942,6 +943,45 @@ const data = {
                     return { status: 200, response: { success: true, comments }}
                 } catch (err) {
                     console.error("❌ | Error in GetModpackComments method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.ChangeModpackLikeStatus = async(req: StrictRouteRequest, mod: string, status: boolean) => {
+                try {
+                    const dbModpack = await this.methods.GetModpack(mod)
+                    if(!dbModpack) {
+                        return { status: 404, response: { success: false, message: "Mod not found" } }
+                    }
+
+                    const user = await this.methods.getUser(req.session.user)
+                    if(!user) {
+                        return { status: 401, response: { success: false, message: "You must be logged in to change mod like status" } }
+                    }
+
+                    const modpackIdStr = dbModpack._id.toString();
+                    const alreadyLiked = user.likedModpacks.includes(modpackIdStr);
+
+                    if (
+                        (status === true && alreadyLiked) ||
+                        (status === false && !alreadyLiked)
+                    ) {
+                        return { status: 409, response: { success: false, message: `Like status is already ${status}` } }
+                    }
+
+                    await this.collections.accounts.users.updateOne(
+                        { _id: user._id },
+                        status ? { $push: { likedModpacks: modpackIdStr } } : { $pull: { likedModpacks: modpackIdStr } }
+                    );
+
+                    await this.collections.modpacks.catalog.updateOne(
+                        { _id: dbModpack._id },
+                        { $inc: { likes: (status ? 1 : -1) } }
+                    );
+
+                    return { status: 200, response: { success: true, message: `Mod like status changed successfully` }}
+                } catch (err) {
+                    console.error("❌ | Error in ChangeModLikeStatus method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }
