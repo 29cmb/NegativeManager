@@ -33,9 +33,11 @@ export type Database = {
         signup(email: string, username: string, password: string): RouteMethodReturn
         GetUserFromUsername(username: string): Promise<WithId<Document & UserData> | null>,
         getUser(id: string): Promise<WithId<Document & UserData> | null>
-        GetMod(id: string): Promise<WithId<Document & ModData> | null>
+        GetMod(id: string): Promise<WithId<Document & ModData> | null>,
+        GetPublicMod(id: string): Promise<WithId<Document & PublicModData> | null>,
         GetRelease(modId: string, tag: string): Promise<ReleaseData | null>,
-        GetModpack(modpackId: string): Promise<WithId<Document & ModpackData> | null>
+        GetModpack(modpackId: string): Promise<WithId<Document & ModpackData> | null>,
+        GetPublicModpack(id: string): Promise<WithId<Document & PublicModpackData> | null>,
         login(req: StrictRouteRequest, username: string, password: string): RouteMethodReturn
         submit(req: StrictRouteRequest, name: string, description: string, icon: string, dependencies: [{ id: string, tag: string }], source_code: string, github_release_link: string): RouteMethodReturn
         ChangeModApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn
@@ -92,6 +94,23 @@ export type ModData = {
     releases: ReleaseData[]
 }
 
+export type PublicModData = {
+    name: string,
+    description: string,
+    icon: string,
+    author: string,
+    source_code: string,
+    archived: boolean,
+    downloads: number,
+    likes: number,
+    releases: PublicReleaseData[],
+    // Fields that will be removed
+    updateApprovalPending?: boolean,
+    approved?: boolean,
+    reviewed?: boolean,
+    moderationReason?: string | null
+}
+
 export type ModpackData = {
     name: string,
     description: string,
@@ -105,6 +124,21 @@ export type ModpackData = {
     moderationReason: string | null
 }
 
+export type PublicModpackData = {
+    name: string,
+    description: string,
+    author: string
+    icon: string,
+    mods: [{ id: string, tag: string }],
+    downloads: number,
+    likes: number,
+    // you get the idea
+    approved?: boolean,
+    reviewed?: boolean,
+    moderationReason?: string | null
+}
+
+
 export type ReleaseData = {
     name: string,
     body: string,
@@ -117,6 +151,20 @@ export type ReleaseData = {
     approved: boolean,
     reviewed: boolean,
     moderationReason: string | null
+}
+
+export type PublicReleaseData = {
+    name: string,
+    body: string,
+    tag: string,
+    url: string,
+    dependencies: [{ id: string, tag: string }],
+    created_at: string,
+    checksum: string,
+    // removed fields
+    approved?: boolean,
+    reviewed?: boolean,
+    moderationReason?: string | null
 }
 
 export type CommentData = {

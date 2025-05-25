@@ -2,7 +2,7 @@ import { AggregateOptions, MongoClient, ObjectId, ServerApiVersion, WithId } fro
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
-import { CommentData, Database, ModData, ModpackData, StrictRouteRequest, UserData } from "../Types";
+import { CommentData, Database, ModData, ModpackData, PublicModData, PublicModpackData, StrictRouteRequest, UserData } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -104,6 +104,34 @@ const data = {
                 }
             }
 
+            this.methods.GetPublicMod = async (id) => {
+                try {
+                    const mod = await this.methods.GetMod(id) as WithId<Document & PublicModData> | null
+                    if(mod == null) {
+                        return null
+                    }
+            
+                    delete mod.approved;
+                    delete mod.reviewed;
+                    delete mod.moderationReason;
+                    delete mod.updateApprovalPending;
+
+                    if (Array.isArray(mod.releases)) {
+                        for (const release of mod.releases) {
+                            delete release.approved;
+                            delete release.reviewed;
+                            delete release.moderationReason;
+                        }
+                    }
+            
+                    return mod;
+            
+                } catch(err) {
+                    console.log(`❌ | An error occured in the GetPublicMod method: ${err}`)
+                    return null
+                }
+            }
+
             this.methods.GetRelease = async (modId, tag) => {
                 const mod = await this.methods.GetMod(modId)
                 if (!mod || !Array.isArray(mod.releases)) return null;
@@ -121,7 +149,26 @@ const data = {
 
                     return this.collections.modpacks.catalog.findOne({ _id: oid })
                 } catch(err) {
-                    console.log(`❌ | An error occured in the GetMod method: ${err}`)
+                    console.log(`❌ | An error occured in the GetModpack method: ${err}`)
+                    return null
+                }
+            }
+
+            this.methods.GetPublicModpack = async (id) => {
+                try {
+                    const modpack = await this.methods.GetModpack(id) as WithId<Document & PublicModpackData> | null
+                    if(modpack == null) {
+                        return null
+                    }
+            
+                    delete modpack.approved;
+                    delete modpack.reviewed;
+                    delete modpack.moderationReason;
+
+                    return modpack;
+            
+                } catch(err) {
+                    console.log(`❌ | An error occured in the GetPublicModpack method: ${err}`)
                     return null
                 }
             }

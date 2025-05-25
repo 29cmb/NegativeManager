@@ -4,7 +4,7 @@ export default (app: Express) => {
     app.get("/api/v1/mods/info/:id", async (req, res) => {
         const { id } = req.params
         
-        const mod = await database.methods.GetMod(id)
+        const mod = await database.methods.GetPublicMod(id)
         if(!mod) {
             res.status(404).json({ success: false, message: `Mod with id ${id} was not found` })
             return
