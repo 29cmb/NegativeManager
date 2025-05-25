@@ -499,7 +499,8 @@ const data = {
                                 Object.entries(settings).filter(([key]) => allowedFields.includes(key))
                             )),
                             approved: false,
-                            reviewed: false
+                            reviewed: false,
+                            moderationReason: null
                         }
                     })
 
@@ -982,6 +983,76 @@ const data = {
                     return { status: 200, response: { success: true, message: `Mod like status changed successfully` }}
                 } catch (err) {
                     console.error("❌ | Error in ChangeModLikeStatus method:", err);
+                    return { status: 500, response: { success: false, message: "Internal server error" } };
+                }
+            }
+
+            this.methods.ChangeModpackSettings = async (
+                req: StrictRouteRequest,
+                modpackId: string, 
+                settings: { name?: string, description?: string, icon?: string, mods?: [{id: string, tag: string}] }
+            ) => {
+                try {
+                    const user = await this.methods.getUser(req.session.user);
+                    if(!user) {
+                        return { 
+                            status: 401,
+                            response: {
+                                success: false,
+                                message: "You must be logged in to change mod settings",
+                            }
+                        };
+                    }
+    
+                    const modpack = await this.methods.GetModpack(modpackId)
+                    if(!modpack) {
+                        return {
+                            status: 404,
+                            response: {
+                                success: false,
+                                message: "Mod not found"       
+                            }
+                        }
+                    }
+    
+                    // Maybe add collaborators in the future, idk
+                    if(modpack.author !== req.session.user && user.level < 1) {
+                        return {
+                            status: 403,
+                            response: {
+                                success: false,
+                                message: "You do not have permission to edit this mod!"
+                            }
+                        }
+                    }
+    
+                    const allowedFields = [
+                        "name",
+                        "description",
+                        "icon",
+                        "mods"
+                    ]
+    
+                    await this.collections.mods.catalog.updateOne({ _id: new ObjectId(modpackId) }, {
+                        $set: {
+                            ...(Object.fromEntries(
+                                Object.entries(settings).filter(([key]) => allowedFields.includes(key))
+                            )),
+                            approved: false,
+                            reviewed: false,
+                            moderationReason: null
+                        }
+                    })
+
+                    return {
+                        status: 200,
+                        response: {
+                            success: true,
+                            message: "Mod settings updated successfully",
+                        }
+                    }
+                } catch(err) {
+                    console.error("❌ | Error in ChangeModSettings method:", err);
                     return { status: 500, response: { success: false, message: "Internal server error" } };
                 }
             }

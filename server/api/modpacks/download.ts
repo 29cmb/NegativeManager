@@ -48,7 +48,7 @@ export default (app: Express) => {
                 }
 
                 if(checksum !== release.checksum) {
-                    continue
+                    return
                 }
 
                 const response = await axios.get(release.download, { responseType: "arraybuffer" })
