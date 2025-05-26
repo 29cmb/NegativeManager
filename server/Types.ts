@@ -47,7 +47,7 @@ export type Database = {
         ChangeModSettings(req: StrictRouteRequest, modId: string, settings: { name?: string, description?: string, icon?: string }): RouteMethodReturn
         UpdateReleaseSettings(req: StrictRouteRequest, modId: string, tag: string): RouteMethodReturn,
         ArchiveMod(req: StrictRouteRequest, id: string): RouteMethodReturn,
-        ModDownload(id: string, tag: string): Promise<void>,
+        ModDownload(ip: string | undefined, id: string, tag: string): Promise<void>,
         GetSearch(page: number, query?: string, sorting?: "downloads" | "likes"): Promise<
             {success: boolean, mods?: Document[] | WithId<{ success: boolean, mods: [ModData] }>}
         >,
@@ -57,7 +57,7 @@ export type Database = {
         GetDependencies(mod: string, tag: string): Promise<{ status: number, response: {[key: string]: any}}>,
         CreateModpack(req: StrictRouteRequest, name: string, description: string, icon: string, mods: [{ id: string, tag: string }]): RouteMethodReturn,
         ChangeModpackApprovalStatus(req: StrictRouteRequest, id: string, status: boolean, reason?: string): RouteMethodReturn,
-        ModpackDownload(id: string): Promise<void>,
+        ModpackDownload(ip: string | undefined, id: string): Promise<void>,
         GetModpackSearch(page: number, query?: string, sorting?: "downloads" | "likes"): Promise<
             {success: boolean, modpacks?: Document[] | WithId<{ success: boolean, modpacks: [ModpackData] }>}
         >,

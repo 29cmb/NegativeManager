@@ -20,14 +20,7 @@ export default (app: Express) => {
             return
         }
 
-        if (!visits[id]) visits[id] = [];
-        if(!visits[id].some(value => value === ip) && ip !== undefined) {
-            visits[id].push(ip)
-            setTimeout(() => {
-                visits[id] = visits[id].filter(v => v !== ip)
-            }, 1000 * 60 * 30)
-            database.methods.ModpackDownload(id)
-        }
+        await database.methods.ModpackDownload(ip, id)
 
         const { path: tempDirPath, cleanup } = await tmpDir({ unsafeCleanup: true })
         try {

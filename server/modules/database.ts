@@ -12,6 +12,9 @@ const client = new MongoClient(uri, {
     }
 });
 
+const modDownloads = {} as {[mod: string]: string[]}
+const modpackDownloads = {} as {[mod: string]: string[]}
+
 const data = {
     uri,
     client,
@@ -628,17 +631,25 @@ const data = {
                 }
             }
 
-            this.methods.ModDownload = async (id: string, tag: string) => {
+            this.methods.ModDownload = async (ip: string, id: string, tag: string) => {
                 const mod = await this.methods.GetMod(id)
                 if(!mod) return
-
+                
                 const release = await this.methods.GetRelease(id, tag)
                 if(!release) return
 
-                await this.collections.mods.catalog.updateOne(
-                    { _id: new ObjectId(id), "releases.tag": tag },
-                    { $inc: { "releases.$.downloads": 1 }}
-                );
+                if (!modDownloads[id]) modDownloads[id] = [];
+                if(!modDownloads[mod._id.toString()].some(value => value === ip) && ip !== undefined) {
+                    modDownloads[mod._id.toString()].push(ip)
+                    setTimeout(() => {
+                        modDownloads[mod._id.toString()].filter(v => v !== ip)
+                    }, 1000 * 60 * 30)
+
+                    await this.collections.mods.catalog.updateOne(
+                        { _id: new ObjectId(id), "releases.tag": tag },
+                        { $inc: { "releases.$.downloads": 1 }}
+                    );
+                }
             }
 
             // im far too lazy to do all this
@@ -870,11 +881,19 @@ const data = {
                 }
             }
 
-            this.methods.ModpackDownload = async(id: string) => {
+            this.methods.ModpackDownload = async(ip: string | undefined, id: string) => {
                 const modpack = await this.methods.GetMod(id)
                 if(!modpack) return
 
-                await this.collections.modpacks.catalog.updateOne({ $id: new ObjectId(id) }, {$inc: { downloads: 1 }})
+                if(!modpackDownloads[id]) modpackDownloads[id] = [];
+                if(!modpackDownloads[id].some(value => value === ip) && ip !== undefined) {
+                    modpackDownloads[id].push(ip)
+                    setTimeout(() => {
+                        modpackDownloads[id] = modpackDownloads[id].filter(v => v !== ip)
+                    }, 1000 * 60 * 30)
+                    
+                    await this.collections.modpacks.catalog.updateOne({ $id: new ObjectId(id) }, {$inc: { downloads: 1 }})
+                }
             }
 
             this.methods.GetModpackSearch = async (page: number, query?: string, sorting?: "downloads" | "likes") => {

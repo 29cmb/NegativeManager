@@ -26,16 +26,8 @@ export default (app: Express) => {
             res.status(403).json({ success: false, message: "Mod or release has not been approved by moderators" })
             return
         }
-
-        if (!visits[id]) visits[id] = [];
-        if(!visits[mod._id.toString()].some(value => value === ip) && ip !== undefined) {
-            visits[mod._id.toString()].push(ip)
-            setTimeout(() => {
-                visits[mod._id.toString()].filter(v => v !== ip)
-            }, 1000 * 60 * 30)
             
-            database.methods.ModDownload(id, tag)
-        }
+        await database.methods.ModDownload(ip, id, tag)
 
         if (!release.download) {
             res.status(400).json({ success: false, message: "No download URL found for this mod" })
