@@ -1,17 +1,27 @@
 import { Controller } from "../Types";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import Logging from "../util/Logging";
+
+export const isWindows = os.platform() === "win32";
+export const APPDATA_PATH = path.join((isWindows ? process.env.APPDATA : `${process.env.HOME}/Library/Application Support`) || '', 'Balatro Instance Manager');
 
 const defaultFiles = [
     {
         name: 'config.json',
         type: 'file',
-        content: JSON.stringify({
-            "balatro_data_path": "%APPDATA%\\Balatro",
-            "balatro_steam_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Balatro",
-            "profiles_directory": "%APPDATA%\\Balatro Instance Manager\\Profiles"
-        }, null, 4),
+        get content() {
+            const balatro_data_path = isWindows ? `${process.env.APPDATA}\\Balatro` : `${process.env.HOME}/Library/Application Support/Balatro`
+            const balatro_steam_path = isWindows ? "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Balatro" : `${process.env.HOME}/Library/Application Support/Steam/steamapps/common/Balatro`
+            const profiles_directory = isWindows ? `${APPDATA_PATH}\\Profiles` :`${APPDATA_PATH}/Profiles`
+            
+            return JSON.stringify({
+                balatro_data_path,
+                balatro_steam_path,
+                profiles_directory
+            }, null, 4);
+        },
         validate: (defalutContent: string, content: string) => {
             const defaultJson = JSON.parse(defalutContent);
             const parsedJson = JSON.parse(content);
@@ -40,8 +50,6 @@ const defaultFiles = [
     }
 ]
 
-export const APPDATA_PATH = path.join(process.env.APPDATA || '', 'Balatro Instance Manager');
-
 export default class DataController implements Controller {
     public name: string = "DataController";
     public description: string = "Controller for managing data such as settings.";
@@ -60,7 +68,7 @@ export default class DataController implements Controller {
             switch (file.type) {
                 case 'file':
                     file = file as { name: string, type: 'file', content: string, validate: (defaultContent: string, content: string) => any };
-                    const replacedContext = file.content.replace(/%APPDATA%/g, (process.env.APPDATA || '').replace(/\\/g, '\\\\'));
+                    const replacedContext = file.content.replace(/\\/g, '\\\\')
 
                     if (!fs.existsSync(filePath)) {
                         fs.writeFileSync(filePath, replacedContext, { encoding: 'utf8' });

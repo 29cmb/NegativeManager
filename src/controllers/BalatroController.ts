@@ -3,10 +3,14 @@ import { Controller, ManagerConfiguration } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
-import DataController, { APPDATA_PATH } from "./DataController";
+import DataController, { APPDATA_PATH, isWindows } from "./DataController";
 import { spawn } from "child_process";
 import path from "path";
 import { waitForFile } from "../util/Util";
+import axios from "axios"
+import os from "os"
+import tmp from "tmp"
+import * as tar from "tar"
 
 const ProfileContents = [
     {
@@ -38,11 +42,11 @@ export default class BalatroController implements Controller {
             Logging.error("DataController not found. Cannot initialize BalatroController.");
             return;
         }
-
+        
         if(Config.Debug.CreateDefaultProfile){
             const defaultProfileName = Config.Debug.DefaultProfileName
             const profilePath = this.GetProfile(defaultProfileName)
-    
+            
             if (!profilePath) {
                 this.NewProfile(defaultProfileName)
                 Logging.debug("Created default profile: " + defaultProfileName)
@@ -51,8 +55,98 @@ export default class BalatroController implements Controller {
             }
         }
 
+        this.DownloadLovely()
+
         if(Config.Debug.LaunchBalatroOnStart) {
             this.LaunchBalatro(Config.Debug.AutolaunchProfile)
+        }
+    }
+
+    private async DownloadLovely() {
+        const config = (this.DC as DataController).GetAppdataFileContents("config.json")
+        if (!config) {
+            Logging.error("Config file not found. Cannot download lovely.")
+            return
+        }
+
+        const parsedConfig: ManagerConfiguration = JSON.parse(config)
+        if(!parsedConfig) {
+            Logging.error("Invalid config file. Cannot download lovely")
+            return
+        }
+
+        const apiUrl = "https://api.github.com/repos/ethangreen-dev/lovely-injector/releases/latest";
+        const destinationDir = parsedConfig.balatro_steam_path
+
+        if(isWindows) {
+            if(fs.existsSync(path.join(parsedConfig.balatro_steam_path, "version.dll"))) {
+                Logging.success("Lovely already installed, skipping installation")
+                return
+            }
+        } else {
+            if(fs.existsSync(path.join(parsedConfig.balatro_steam_path, "liblovely.dylib"))) {
+                Logging.success("Lovely already installed, skipping installation")
+                return
+            }
+        }
+
+        try {
+            Logging.info("Fetching the latest release of Lovely...");
+
+            const releaseResponse = await axios.get(apiUrl, {
+                headers: { "Accept": "application/vnd.github.v3+json" },
+            });
+
+            let asset;
+            const arch = os.arch();
+            if (isWindows) {
+                asset = releaseResponse.data.assets.find((asst: any) =>
+                    asst.browser_download_url.includes("lovely-x86_64-pc-windows-msvc")
+                );
+            } else {
+                if (arch === "x64") {
+                    asset = releaseResponse.data.assets.find((asst: any) =>
+                        asst.browser_download_url.includes("lovely-x86_64-apple-darwin")
+                    );
+                } else if (arch === "arm64") {
+                    asset = releaseResponse.data.assets.find((asst: any) =>
+                        asst.browser_download_url.includes("lovely-aarch64-apple-darwin")
+                    );
+                }
+            }
+
+            if (!asset) {
+                throw new Error("No suitable release found for the current architecture.");
+            }
+
+            Logging.info("Downloading Lovely...");
+
+            const tempDir = tmp.dirSync({ unsafeCleanup: true });
+            const tempFilePath = path.join(tempDir.name, "Lovely.tar.gz");
+
+            const downloadResponse = await axios.get(asset.browser_download_url, { responseType: "stream" });
+            const writer = fs.createWriteStream(tempFilePath);
+
+            downloadResponse.data.pipe(writer);
+
+            await new Promise<void>((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
+
+            Logging.info("Unzipping Lovely...")
+
+            await tar.x({
+                file: tempFilePath,
+                cwd: destinationDir,
+            });
+
+            Logging.success("Successfully downloaded and extracted the Lovely Injector to: " + destinationDir);
+
+            tempDir.removeCallback();
+        } catch (err: any) {
+            Logging.error("Failed to download and extract the Lovely Injector: " + err.message);
+            throw err
         }
     }
     
@@ -82,9 +176,16 @@ export default class BalatroController implements Controller {
             return
         }
 
-        if(!fs.existsSync(path.join(parsedConfig.balatro_steam_path, "Balatro.exe"))) {
-            Logging.error("Balatro executable not found in steam path: " + launchPath)
-            return
+        if(isWindows) {
+            if(!fs.existsSync(path.join(parsedConfig.balatro_steam_path, "Balatro.exe"))) {
+                Logging.error("Balatro executable not found in steam path: " + launchPath)
+                return
+            }
+        } else {
+            if(!fs.existsSync(path.join(parsedConfig.balatro_steam_path, "run_lovely_macos.sh"))) {
+                Logging.error("Lovely launcher not found in steam path: " + launchPath)
+                return
+            }
         }
 
         if(!fs.existsSync(parsedConfig.balatro_data_path)) {
@@ -96,9 +197,6 @@ export default class BalatroController implements Controller {
 
         const dataModPath = path.join(parsedConfig.balatro_data_path, "Mods")
         if(profileName) {
-            // Load mods into the data path
-            // I might fork lovely to use the Balatro.exe path instead of the data path in the future.
-            
             if(fs.existsSync(dataModPath)) {
                 if(!fs.existsSync(path.join(dataModPath, ".instance_modpack"))) {
                     const oldModsPath = path.join(parsedConfig.balatro_data_path, "OldMods" + Date.now());
@@ -134,14 +232,39 @@ export default class BalatroController implements Controller {
 
         await waitForFile(path.join(parsedConfig.balatro_data_path, "Mods", ".instance_modpack"), 2000)
 
-        const process = spawn(parsedConfig.balatro_steam_path + "\\Balatro.exe")
-        process.on("close", (code) => {
-            if (code !== 0) {
-                Logging.error("Balatro process exited with code: " + code)
-            } else {
-                Logging.success("Balatro process exited successfully.")
+        if(isWindows) {
+            const process = spawn(parsedConfig.balatro_steam_path + "\\Balatro.exe")
+            process.on("close", (code) => {
+                if (code !== 0) {
+                    Logging.error("Balatro process exited with code: " + code)
+                } else {
+                    Logging.success("Balatro process exited successfully.")
+                }
+            })
+        } else {
+            const scriptPath = path.join(parsedConfig.balatro_steam_path, "run_lovely_macos.sh");
+
+            if (!fs.existsSync(scriptPath)) {
+                Logging.error("Lovely launcher not found in steam path: " + scriptPath);
+                return;
             }
-        })
+
+            Logging.info("Launching Lovely using the macOS script...");
+
+            const process = spawn("sh", [scriptPath], { stdio: "inherit" });
+
+            process.on("close", (code) => {
+                if (code !== 0) {
+                    Logging.error("Lovely process exited with code: " + code);
+                } else {
+                    Logging.success("Lovely process exited successfully.");
+                }
+            });
+
+            process.on("error", (err) => {
+                Logging.error("Failed to start Lovely process: " + err.message);
+            });
+        }
     }
 
     public NewProfile(profileName: string): void {
@@ -167,7 +290,7 @@ export default class BalatroController implements Controller {
             return
         }
 
-        const profilePath = `${parsedConfig.profiles_directory}\\${profileName}`
+        const profilePath = `${parsedConfig.profiles_directory}${isWindows ? "\\" : "/"}${profileName}`
         if (fs.existsSync(profilePath)) {
             Logging.error("Profile already exists: " + profilePath)
             return
