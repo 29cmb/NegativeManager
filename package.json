@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "concurrently \"cd server && npm run dev\" \"npx wait-port http://localhost:11731 && npm run app\" \"cd client && npm run dev\"",
-    "app": "chcp 65001 && tsc && electron ."
+    "app": "tsc && electron ."
   },
   "keywords": [],
   "author": "",
@@ -13,7 +13,7 @@
   "type": "commonjs",
   "devDependencies": {
     "concurrently": "^9.1.2",
-    "electron": "36.2.0",
+    "electron": "^36.3.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "wait-port": "^1.1.0"
