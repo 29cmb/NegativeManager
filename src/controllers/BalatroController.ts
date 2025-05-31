@@ -3,7 +3,7 @@ import { Controller, ManagerConfiguration } from "../Types";
 import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
-import DataController, { APPDATA_PATH, isWindows } from "./DataController";
+import DataController, { isWindows } from "./DataController";
 import { spawn } from "child_process";
 import path from "path";
 import { waitForFile } from "../util/Util";
@@ -69,8 +69,11 @@ export default class BalatroController implements Controller {
             return
         }
 
-        const parsedConfig: ManagerConfiguration = JSON.parse(config)
-        if(!parsedConfig) {
+        var parsedConfig: ManagerConfiguration
+
+        try {
+            parsedConfig = JSON.parse(config)
+        } catch(err) {
             Logging.error("Invalid config file. Cannot download lovely")
             return
         }
@@ -162,9 +165,12 @@ export default class BalatroController implements Controller {
             return
         }
 
-        const parsedConfig: ManagerConfiguration = JSON.parse(config);
-        if (!parsedConfig) {
-            Logging.error("Failed to parse config file. Cannot launch Balatro.")
+        var parsedConfig: ManagerConfiguration
+
+        try {
+            parsedConfig = JSON.parse(config)
+        } catch(err) {
+            Logging.error("Invalid config file. Cannot launch Balatro")
             return
         }
 
@@ -279,9 +285,12 @@ export default class BalatroController implements Controller {
             return
         }
 
-        const parsedConfig: ManagerConfiguration = JSON.parse(config);
-        if(!parsedConfig) {
-            Logging.error("Failed to parse config file. Cannot create new profile.")
+        var parsedConfig: ManagerConfiguration
+
+        try {
+            parsedConfig = JSON.parse(config)
+        } catch(err) {
+            Logging.error("Invalid config file. Cannot create new profile.")
             return
         }
 
@@ -322,11 +331,14 @@ export default class BalatroController implements Controller {
             return null
         }
 
-        const parsedConfig: ManagerConfiguration = JSON.parse(config);
-        if (!parsedConfig) {
-            Logging.error("Failed to parse config file. Cannot get profile.")
+        var parsedConfig: ManagerConfiguration
+
+        try {
+            parsedConfig = JSON.parse(config)
+        } catch(err) {
+            Logging.error("Invalid config file. Cannot get profile.")
             return null
-        }
+        }   
 
         const profilePath = `${parsedConfig.profiles_directory}\\${profileName}`
         if (!fs.existsSync(profilePath)) {
@@ -334,5 +346,32 @@ export default class BalatroController implements Controller {
         }
 
         return profilePath
+    }
+
+    public GetProfileInfo(profileName: string): any | null {
+        const ProfilePath = this.GetProfile(profileName)
+        if(ProfilePath == null) {
+            Logging.error("GetProfile didn't return a valid profile path.")
+            return
+        }
+
+       if(!fs.existsSync(path.join(ProfilePath, "profile.json"))){
+            Logging.error("Profile does not have a valid configuration file.")
+            return
+        }
+
+        const profileConfig = fs.readFileSync(path.join(ProfilePath, "profile.json"), { encoding: "utf8" })
+        var parsedProfileConfig
+        try {
+            parsedProfileConfig = JSON.parse(profileConfig)
+        } catch(err) {
+            Logging.error("Profile configuration is not valid json.")
+            return
+        }
+
+        return {
+            name: profileName,
+            ...parsedProfileConfig
+        }
     }
 }

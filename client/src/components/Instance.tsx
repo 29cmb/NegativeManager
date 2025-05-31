@@ -18,7 +18,7 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
             }} className="absolute w-[120px] cursor-pointer h-[120px] bg-[rgba(14,255,86,0.5)] outline-[5px] outline-[rgb(14,75,32)] rounded-[10px] opacity-0 hover:opacity-100 transition-opacity duration-300 ease-in-out">
                 <Image
                     src={"/play.png"}
-                    alt="Plus icon"
+                    alt="Play icon"
                     width={60}
                     height={60}
                     className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] cursor-pointer"

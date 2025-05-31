@@ -22,9 +22,15 @@ const defaultFiles = [
                 profiles_directory
             }, null, 4);
         },
-        validate: (defalutContent: string, content: string) => {
-            const defaultJson = JSON.parse(defalutContent);
-            const parsedJson = JSON.parse(content);
+        validate: (defaultContent: string, content: string) => {
+            const defaultJson = JSON.parse(defaultContent);
+            var parsedJson;
+            try {
+                parsedJson = JSON.parse(content);
+            } catch(err) {
+                Logging.error("Invalid profile json file, resetting to default.")
+                parsedJson = defaultJson
+            }
 
             if(!parsedJson.balatro_data_path || typeof(parsedJson.balatro_data_path) !== 'string' || !fs.existsSync(parsedJson.balatro_data_path)) {
                 Logging.error("Invalid balatro_data_path in config.json, resetting to default.")
