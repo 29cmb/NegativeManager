@@ -1,4 +1,4 @@
-import { Controller } from "../Types";
+import { Controller, ManagerConfiguration } from "../Types";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -103,5 +103,20 @@ export default class DataController implements Controller {
         }
 
         return null;
+    }
+
+    public GetManagerConfig() : ManagerConfiguration | null {
+        const config = this.GetAppdataFileContents("config.json")
+        if (!config) return null
+
+        var parsedConfig: ManagerConfiguration
+
+        try {
+            parsedConfig = JSON.parse(config)
+        } catch(err) {
+            return null
+        }
+
+        return parsedConfig
     }
 }

@@ -2,16 +2,25 @@ import { Controller } from "../Types";
 import { app, BrowserWindow } from "electron";
 import * as path from "path";
 import Logging from "../util/Logging";
+import IPCController from "./IPCController";
+import Registry from "../util/Registry";
 
 export default class ElectronController implements Controller {
     public name: string = "ElectronController";
     public description: string = "Controller for Electron specific functionality.";
     public version: string = "1.0.0";
+    private IPC: IPCController | null = null;
 
     private mainWindow: BrowserWindow | null = null;
 
     public async init(): Promise<void> {
+        this.IPC = (await Registry.AwaitController("IPCController")) as IPCController
+
         app.whenReady().then(() => {
+            if(this.IPC) {
+                this.IPC.SetupIPC()
+            }
+            
             this.createWindow()
         
             app.on('activate', () => {
