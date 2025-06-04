@@ -9,15 +9,9 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
+    unoptimized: true
   },
-  rewrites: async () => {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `http://localhost:9421/api/:path*`,
-      },
-    ];
-  }
+  output: "export",
 };
 
 export default nextConfig;

@@ -267,7 +267,7 @@ export default class BalatroController implements Controller {
                     clearInterval(this.playtimeTrackers[profileName])
                 }
 
-                if (code !== 0) {
+                if (code !== 0 && code !== 3221225786) {
                     Logging.error("Balatro process exited with code: " + code)
                 } else {
                     Logging.success("Balatro process exited successfully.")
@@ -295,7 +295,7 @@ export default class BalatroController implements Controller {
                     clearInterval(this.playtimeTrackers[profileName])
                 }
 
-                if (code !== 0) {
+                if (code !== 0 && code !== 3221225786) { // the code that is given when the lovely console is closed
                     Logging.error("Lovely process exited with code: " + code);
                 } else {
                     Logging.success("Lovely process exited successfully.");

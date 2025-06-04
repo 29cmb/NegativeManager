@@ -1,3 +1,4 @@
+'use client'
 import Instance from "@/components/Instance";
 // import Mod from "@/components/Mod";
 // import Modpack from "@/components/Modpack";
@@ -58,7 +59,7 @@ const HomePage = () => {
                                             key={index}
                                             time={formatTimePlayed(instance.TimePlayed)}
                                             name={instance.name}
-                                            icon={instance.Icon}
+                                            icon={instance.Icon !== "" ? instance.Icon : null}
                                         />
                                     ))
                             }

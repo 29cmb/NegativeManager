@@ -1,12 +1,12 @@
 import Image from "next/image";
 
-const Instance = ({ name, time, icon }: {name: string, time: string, icon: string}) => {
+const Instance = ({ name, time, icon }: {name: string, time: string, icon: string | null}) => {
     return <div className="h-[160px] w-[32.5%] bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[5px] outline-[rgb(50,50,50)] hover:bg-[rgb(40,40,40)] transition-all duration-[0.25s] hover:rotate-2 active:scale-95 hover:scale-110">
         <div className="flex">
             <div className="w-[120px] h-[120px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
                 <Image
                     alt="Instance icon"
-                    src={icon}
+                    src={icon || "missing.png"}
                     width={120}
                     height={120}
                     unoptimized
@@ -26,7 +26,9 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
                 />
             </button>
             <div>
-                <p className="ml-[20px] font-bold text-[30px] text-white">{name}</p>
+                <p className="ml-[20px] font-bold" style={{
+                    fontSize: Math.max(16, 30 - Math.max(0, name.length - 6))
+                }}>{name}</p>
                 <div className="flex items-center">
                     <Image
                         alt="Clock icon"
