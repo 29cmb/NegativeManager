@@ -14,7 +14,7 @@ const defaultFiles = [
         get content() {
             const balatro_data_path = isWindows ? `${process.env.APPDATA}\\Balatro` : `${process.env.HOME}/Library/Application Support/Balatro`
             const balatro_steam_path = isWindows ? "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Balatro" : `${process.env.HOME}/Library/Application Support/Steam/steamapps/common/Balatro`
-            const profiles_directory = isWindows ? `${APPDATA_PATH}\\Profiles` :`${APPDATA_PATH}/Profiles`
+            const profiles_directory = path.join(APPDATA_PATH, "Profiles")
             
             return JSON.stringify({
                 balatro_data_path,

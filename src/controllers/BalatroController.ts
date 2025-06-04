@@ -364,7 +364,7 @@ export default class BalatroController implements Controller {
             return
         }
 
-        const profilePath = `${parsedConfig.profiles_directory}${isWindows ? "\\" : "/"}${profileName}`
+        const profilePath = path.join(parsedConfig.profiles_directory, profileName)
         if (fs.existsSync(profilePath)) {
             Logging.error("Profile already exists: " + profilePath)
             return
@@ -396,7 +396,7 @@ export default class BalatroController implements Controller {
             return null
         }
 
-        const profilePath = `${parsedConfig.profiles_directory}\\${profileName}`
+        const profilePath = path.join(parsedConfig.profiles_directory, profileName)
         if (!fs.existsSync(profilePath)) {
             return null
         }
