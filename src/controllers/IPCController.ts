@@ -15,9 +15,13 @@ export default class IPCController implements Controller {
     }
 
     public SetupIPC() : void {
-        ipcMain.handle("get-all-profiles", (event, arg) => {
+        ipcMain.handle("get-all-profiles", (event) => {
             if(!this.BC) return null;
             return this.BC.GetAllProfiles()
+        })
+
+        ipcMain.on("launch-instance", (event, profileID) => {
+            this.BC?.LaunchBalatro(profileID)
         })
 
         Logging.success("IPC Handlers connected successfully.")

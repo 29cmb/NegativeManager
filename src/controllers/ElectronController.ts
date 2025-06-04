@@ -10,7 +10,6 @@ export default class ElectronController implements Controller {
     public description: string = "Controller for Electron specific functionality.";
     public version: string = "1.0.0";
     private IPC: IPCController | null = null;
-
     private mainWindow: BrowserWindow | null = null;
 
     public async init(): Promise<void> {
@@ -39,10 +38,14 @@ export default class ElectronController implements Controller {
 
     protected createWindow(): void {
         Logging.info("Creating main window...")
+        
         this.mainWindow = new BrowserWindow({
             width: 1200,
             height: 600,
             title: "Balatro Instance Manager",
+            webPreferences: {
+                preload: path.join(__dirname, "..", "util", "preload.js")
+            }
         })
 
         if (!app.isPackaged) {

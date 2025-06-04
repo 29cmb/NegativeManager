@@ -7,7 +7,7 @@ export default {
         AutolaunchProfile: "Default",
 
         // Default profile
-        CreateDefaultProfile: false,
+        CreateDefaultProfile: true,
         DefaultProfileName: "Default",
 
         // Client connection
