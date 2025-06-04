@@ -51,7 +51,7 @@ export default class ElectronController implements Controller {
         if (!app.isPackaged) {
             this.mainWindow.loadURL('http://localhost:11731');
         } else {
-            this.mainWindow.setMenu(null)
+            // this.mainWindow.setMenu(null)
             this.mainWindow.loadFile(path.join(__dirname, '../../', 'client', 'out', 'index.html'));
         }
     }

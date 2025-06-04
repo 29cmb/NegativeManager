@@ -19,7 +19,7 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
             <div className="w-[120px] h-[120px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
                 <Image
                     alt="Instance icon"
-                    src={icon || "missing.png"}
+                    src={icon || "https://29cmb.github.io/CDN/assets/balatro/missing.png"}
                     width={120}
                     height={120}
                     unoptimized
@@ -37,11 +37,12 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
                 outlineColor: active === true ? "rgb(75,32,32)" : "rgb(14,75,32)"
             }} className="absolute w-[120px] cursor-pointer h-[120px] outline-[5px] rounded-[10px] opacity-0 hover:opacity-100 transition-opacity duration-300 ease-in-out">
                 <Image
-                    src={active === true ? "/stop.png" : "/play.png"}
+                    src={active === true ? "https://29cmb.github.io/CDN/assets/balatro/stop.png" : "https://29cmb.github.io/CDN/assets/balatro/play.png"}
                     alt="Play icon"
                     width={60}
                     height={60}
                     className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] cursor-pointer"
+                    unoptimized
                 />
             </button>
             <div>
@@ -51,7 +52,7 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
                 <div className="flex items-center">
                     <Image
                         alt="Clock icon"
-                        src={"/clock.png"}
+                        src={"https://29cmb.github.io/CDN/assets/balatro/clock.png"}
                         width={40}
                         height={40}
                         unoptimized

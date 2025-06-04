@@ -2,7 +2,7 @@
 import Instance from "@/components/Instance";
 // import Mod from "@/components/Mod";
 // import Modpack from "@/components/Modpack";
-import "@/styles/globals.css"
+import './globals.css'
 import { useEffect, useState } from "react";
 
 type Profile = { name: string, DateCreated: number, TimePlayed: number, LastPlayed: number, Icon: string, Mods: { name: string }[] } // TODO: add other fields to `Mods` whenever I make it work
@@ -44,7 +44,7 @@ const HomePage = () => {
                     <div className="flex justify-between items-end">
                         <p className="font-bold text-[40px]">Your instances</p>
                         {/* TODO: See more */}
-                        <a className="font-bold text-[20px] text-[#23b9ff]" href="/instances"><u>See more ⟶</u></a>
+                        {/* <a className="font-bold text-[20px] text-[#23b9ff]" href="/instances"><u>See more ⟶</u></a> */}
                     </div>
                     <div className="flex flex-wrap justify-between mt-[20px] gap-[20px] ">
                         <div className="flex flex-wrap justify-between w-full">
