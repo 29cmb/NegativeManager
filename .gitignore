@@ -10,3 +10,11 @@ build
 
 # If I have no idea what the hell im doing, i create a notebook and test it in there.
 *.ipynb
+
+# macOS Finder metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# macOS resource forks
+._*
