@@ -1,6 +1,19 @@
+'use client'
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 const Instance = ({ name, time, icon }: {name: string, time: string, icon: string | null}) => {
+    const [active, setActive] = useState(false)
+
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const isActive = await window.electron.isInstanceActive(name)
+            console.log(isActive)
+            setActive(isActive)
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     return <div className="h-[160px] w-[32.5%] bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[5px] outline-[rgb(50,50,50)] hover:bg-[rgb(40,40,40)] transition-all duration-[0.25s] hover:rotate-2 active:scale-95 hover:scale-110">
         <div className="flex">
             <div className="w-[120px] h-[120px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
@@ -14,11 +27,17 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
                 />
             </div>
             <button onClick={() => {
-                window.electron.launchInstance(name)
-                {/* TODO: instance launching visuals */}
-            }} className="absolute w-[120px] cursor-pointer h-[120px] bg-[rgba(14,255,86,0.5)] outline-[5px] outline-[rgb(14,75,32)] rounded-[10px] opacity-0 hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                if(active === true){
+                    window.electron.killInstance(name)
+                }  else {
+                    window.electron.launchInstance(name) 
+                }
+            }} style={{
+                backgroundColor: active === true ? "rgba(255,0,0,0.5)" : "rgba(14, 255, 86, 0.5)",
+                outlineColor: active === true ? "rgb(75,32,32)" : "rgb(14,75,32)"
+            }} className="absolute w-[120px] cursor-pointer h-[120px] outline-[5px] rounded-[10px] opacity-0 hover:opacity-100 transition-opacity duration-300 ease-in-out">
                 <Image
-                    src={"/play.png"}
+                    src={active === true ? "/stop.png" : "/play.png"}
                     alt="Play icon"
                     width={60}
                     height={60}

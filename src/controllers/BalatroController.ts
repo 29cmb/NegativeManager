@@ -4,7 +4,7 @@ import Config from "../util/Config";
 import Logging from "../util/Logging";
 import Registry from "../util/Registry";
 import DataController, { isWindows } from "./DataController";
-import { spawn } from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import path from "path";
 import { waitForFile } from "../util/Util";
 import axios from "axios"
@@ -38,6 +38,7 @@ export default class BalatroController implements Controller {
     public version: string = "1.0.0";
     private DC: DataController | null = null;
     private runningInstances: string[] = [];
+    private instanceProcesses: { [profile: string]: ChildProcess } = {};
     private playtimeTrackers: { [profile: string] : NodeJS.Timeout } = {};
 
     public async init(): Promise<void> {
@@ -257,9 +258,12 @@ export default class BalatroController implements Controller {
         if(isWindows) {
             const process = spawn(parsedConfig.balatro_steam_path + "\\Balatro.exe")
             this.runningInstances.push(profileName || "Vanilla")
+            this.instanceProcesses[profileName || "Vanilla"] = process
+            
             if(profileName) {
                 this.TrackProfileTime(profileName, launchPath)
             }
+
 
             process.on("close", (code) => {
                 this.runningInstances = this.runningInstances.filter(p => p !== (profileName || "Vanilla"))
@@ -267,7 +271,7 @@ export default class BalatroController implements Controller {
                     clearInterval(this.playtimeTrackers[profileName])
                 }
 
-                if (code !== 0 && code !== 3221225786) {
+                if (code !== null && code !== 0 && code !== 3221225786) {
                     Logging.error("Balatro process exited with code: " + code)
                 } else {
                     Logging.success("Balatro process exited successfully.")
@@ -285,6 +289,7 @@ export default class BalatroController implements Controller {
 
             const process = spawn("sh", [scriptPath], { stdio: "inherit" });
             this.runningInstances.push(profileName || "Vanilla")
+            this.instanceProcesses[profileName || "Vanilla"] = process
             if(profileName) {
                 this.TrackProfileTime(profileName, launchPath)
             }
@@ -295,7 +300,7 @@ export default class BalatroController implements Controller {
                     clearInterval(this.playtimeTrackers[profileName])
                 }
 
-                if (code !== 0 && code !== 3221225786) { // the code that is given when the lovely console is closed
+                if (code !== null && code !== 0 && code !== 3221225786) { // the code that is given when the lovely console is closed
                     Logging.error("Lovely process exited with code: " + code);
                 } else {
                     Logging.success("Lovely process exited successfully.");
@@ -305,6 +310,12 @@ export default class BalatroController implements Controller {
             process.on("error", (err) => {
                 Logging.error("Failed to start Lovely process: " + err.message);
             });
+        }
+    }
+
+    public ExitBalatro(profileName: string): void {
+        if(this.instanceProcesses[profileName]) {
+            this.instanceProcesses[profileName].kill("SIGTERM")
         }
     }
 
@@ -452,5 +463,9 @@ export default class BalatroController implements Controller {
         }
 
         return profileInfo
+    }
+
+    public IsRunning(profile: string): boolean {
+        return this.runningInstances.includes(profile)
     }
 }

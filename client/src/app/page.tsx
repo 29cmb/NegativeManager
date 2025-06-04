@@ -11,7 +11,9 @@ declare global {
     interface Window {
         electron: {
             launchInstance: (arg: string) => void;
+            killInstance: (arg: string) => void;
             getAllProfiles: () => Profile[];
+            isInstanceActive: (arg: string) => boolean;
         };
     }
 }

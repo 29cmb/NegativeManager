@@ -24,6 +24,15 @@ export default class IPCController implements Controller {
             this.BC?.LaunchBalatro(profileID)
         })
 
+        ipcMain.handle("is-instance-running", (event, name) => {
+            if(!this.BC) return false;
+            return this.BC.IsRunning(name)
+        })
+
+        ipcMain.on("kill-instance", (event, name) => {
+            this.BC?.ExitBalatro(name)
+        })
+
         Logging.success("IPC Handlers connected successfully.")
     }
 }
