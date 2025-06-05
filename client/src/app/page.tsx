@@ -4,21 +4,23 @@ import Instance from "@/components/Instance";
 // import Modpack from "@/components/Modpack";
 import './globals.css'
 import { useEffect, useState } from "react";
+import InstanceInspectPage from "@/components/InstanceInspectPage";
 
-type Profile = { name: string, DateCreated: number, TimePlayed: number, LastPlayed: number, Icon: string, Mods: { name: string }[] } // TODO: add other fields to `Mods` whenever I make it work
+export type Profile = { name: string, DateCreated: number, TimePlayed: number, LastPlayed: number, Icon: string, Mods: { name: string }[] } // TODO: add other fields to `Mods` whenever I make it work
 
 declare global {
     interface Window {
         electron: {
-            launchInstance: (arg: string) => void;
-            killInstance: (arg: string) => void;
-            getAllProfiles: () => Profile[];
-            isInstanceActive: (arg: string) => boolean;
+            launchInstance: (arg: string) => Promise<void>;
+            killInstance: (arg: string) => Promise<void>;
+            getProfile: (arg: string) => Promise<Profile>;
+            getAllProfiles: () => Promise<Profile[]>;
+            isInstanceActive: (arg: string) => Promise<boolean>;
         };
     }
 }
 
-function formatTimePlayed(minutes: number): string {
+export function formatTimePlayed(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours < 100) {
@@ -29,6 +31,8 @@ function formatTimePlayed(minutes: number): string {
 
 const HomePage = () => {
     const [instances, setInstances] = useState<Profile[]>([])
+    const [instanceMenuOpen, openInstanceMenu] = useState<boolean>(false);
+    const [inspectedInstance, setInspectedInstance] = useState<Profile | null>(null);
 
     useEffect(() => {
         (async () => {
@@ -38,13 +42,13 @@ const HomePage = () => {
     }, [])
 
     return (
-        <>
+        !instanceMenuOpen ? <>
            <div className="flex justify-center">
                 <div className="w-[90%] h-[18em] mt-[40px]">
                     <div className="flex justify-between items-end">
                         <p className="font-bold text-[40px]">Your instances</p>
                         {/* TODO: See more */}
-                        {/* <a className="font-bold text-[20px] text-[#23b9ff]" href="/instances"><u>See more ⟶</u></a> */}
+                        <a className="font-bold text-[20px] text-[#23b9ff]" href="/instances"><u>See more ⟶</u></a>
                     </div>
                     <div className="flex flex-wrap justify-between mt-[20px] gap-[20px] ">
                         <div className="flex flex-wrap justify-between w-full">
@@ -62,6 +66,10 @@ const HomePage = () => {
                                             time={formatTimePlayed(instance.TimePlayed)}
                                             name={instance.name}
                                             icon={instance.Icon !== "" ? instance.Icon : null}
+                                            openInstance={() => {
+                                                setInspectedInstance(instance)
+                                                openInstanceMenu(true)
+                                            }}
                                         />
                                     ))
                             }
@@ -113,7 +121,7 @@ const HomePage = () => {
                     </div>
                 </div>
             </div> */}
-        </>
+        </> : <InstanceInspectPage instance={inspectedInstance} close={() => openInstanceMenu(false)} />
     )
 }
 

@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const Instance = ({ name, time, icon }: {name: string, time: string, icon: string | null}) => {
+const Instance = ({ name, time, icon, openInstance, full }: {name: string, time: string, icon: string | null, openInstance: () => void, full?: boolean}) => {
     const [active, setActive] = useState(false)
 
     useEffect(() => {
@@ -14,7 +14,9 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
         return () => clearInterval(interval);
     }, []);
 
-    return <div className="h-[160px] w-[32.5%] bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[5px] outline-[rgb(50,50,50)] hover:bg-[rgb(40,40,40)] transition-all duration-[0.25s] hover:rotate-2 active:scale-95 hover:scale-110">
+    return <div style={{
+        width: (full == true ? "100%" : "32.5%")
+    }} onClick={() => { openInstance() }} className="h-[160px] bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[5px] outline-[rgb(50,50,50)] hover:bg-[rgb(40,40,40)] transition-all duration-[0.25s] hover:rotate-[1deg] active:scale-95 hover:scale-105">
         <div className="flex">
             <div className="w-[120px] h-[120px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
                 <Image
@@ -26,7 +28,8 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
                     className="max-w-full max-h-full object-contain rounded-[10px]"
                 />
             </div>
-            <button onClick={() => {
+            <button onClick={(e) => {
+                e.stopPropagation()
                 if(active === true){
                     window.electron.killInstance(name)
                 }  else {
@@ -47,7 +50,7 @@ const Instance = ({ name, time, icon }: {name: string, time: string, icon: strin
             </button>
             <div>
                 <p className="ml-[20px] font-bold" style={{
-                    fontSize: Math.max(16, 30 - Math.max(0, name.length - 6))
+                    fontSize: Math.max(16, 30 - Math.max(0, name.length - (full ? 30 : 6)))
                 }}>{name}</p>
                 <div className="flex items-center">
                     <Image

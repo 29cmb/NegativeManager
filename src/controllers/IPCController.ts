@@ -15,6 +15,10 @@ export default class IPCController implements Controller {
     }
 
     public SetupIPC() : void {
+        ipcMain.handle("get-profile", (event, profile) => {
+            return this.BC?.GetProfile(profile) || null;
+        })
+
         ipcMain.handle("get-all-profiles", (event) => {
             if(!this.BC) return null;
             return this.BC.GetAllProfiles()

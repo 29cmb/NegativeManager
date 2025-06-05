@@ -1,7 +1,7 @@
 {
   "name": "balatroinstancemanager",
+  "description": "A utility for managing balatro instances",
   "version": "1.0.0",
-  "description": "",
   "main": "dist/index.js",
   "scripts": {
     "dev": "concurrently \"cd server && npm run dev\" \"npx wait-port http://localhost:11731 && npm run app\" \"cd client && npm run dev\"",
