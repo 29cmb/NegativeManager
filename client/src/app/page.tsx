@@ -6,7 +6,14 @@ import './globals.css'
 import { useEffect, useState } from "react";
 import InstanceInspectPage from "@/components/InstanceInspectPage";
 
-export type Profile = { name: string, DateCreated: number, TimePlayed: number, LastPlayed: number, Icon: string, Mods: { name: string }[] } // TODO: add other fields to `Mods` whenever I make it work
+export type Profile = { 
+    name: string, 
+    DateCreated: number, 
+    TimePlayed: number, 
+    LastPlayed: number, 
+    Icon: string, 
+    Mods: ({ name: string, author: string, icon: string, tag: string, path: string } | { name: string, path: string })[] 
+}
 
 declare global {
     interface Window {

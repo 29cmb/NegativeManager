@@ -373,11 +373,14 @@ export default class BalatroController implements Controller {
         fs.mkdirSync(profilePath, { recursive: true })
 
         ProfileContents.forEach(file => {
+            console.log(file)
             const filePath = path.join(profilePath, file.name)
             if (file.type === "directory") {
+                console.log(`Creating directory ${file.name} (${profilePath})`)
                 const newFile = file as { name: string, type: "directory" }
-                fs.mkdirSync(newFile.name, { recursive: true })
+                fs.mkdirSync(path.join(profilePath, newFile.name), { recursive: true })
             } else if (file.type === "file") {
+                console.log(`Creating file ${file.name} (${profilePath})`)
                 const newFile = file as { name: string, type: "file", content: string }
                 fs.writeFileSync(filePath, newFile.content)
             }
@@ -417,13 +420,29 @@ export default class BalatroController implements Controller {
         }
 
         const profileConfig = fs.readFileSync(path.join(ProfilePath, "profile.json"), { encoding: "utf8" })
-        var parsedProfileConfig
+        var parsedProfileConfig: { DateCreated: number, TimePlayed: number, Mods: { name: string, path: string }[] }
         try {
             parsedProfileConfig = JSON.parse(profileConfig)
         } catch(err) {
             Logging.error("Profile configuration is not valid json.")
             return
         }
+
+        if(!parsedProfileConfig.Mods) {
+            parsedProfileConfig.Mods = []
+        }
+
+        const modsDir = path.join(ProfilePath, "Mods")
+        fs.readdirSync(modsDir, { encoding: "utf-8"}).forEach(file => {
+            const stat = fs.statSync(path.join(modsDir, file))
+            if(!stat.isDirectory()) return
+
+            if(!parsedProfileConfig.Mods.some(mod => mod.path === path.join(modsDir,file))) {
+                parsedProfileConfig.Mods.push({ name: file, path: path.join(modsDir, file) })
+            }
+        })
+
+        parsedProfileConfig.Mods = parsedProfileConfig.Mods.filter(mod => fs.existsSync(mod.path));
 
         return {
             name: profileName,

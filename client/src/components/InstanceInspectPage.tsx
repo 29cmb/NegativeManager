@@ -67,6 +67,25 @@ const InstanceInspectPage = ({ instance, close }: {instance: Profile |  null, cl
                     </div>
                 </div>
             </div>
+            <div className="bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[rgb(50,50,50)] mt-[20px] outline-[5px] w-full">
+                {
+                    instance !== null 
+                    ? (
+                        (!instance.Mods || instance.Mods?.length == 0 )
+                        ? <p className="text-center py-[20px] text-[20px]">You do not have any downloaded mods!</p> 
+                        : (instance.Mods?.map((mod, index) => {
+                            if (!("tag" in mod)) {
+                                return <div key={index}>
+                                    <p>{mod.name}</p>
+                                </div>
+                            }
+
+                            return <div key={index}>
+                                <p>{mod.name}</p>
+                            </div>
+                        }))
+                    ) : <p className="text-center py-[20px] text-[20px]">You do not have any downloaded mods!</p>}
+            </div>
         </div>
     </>
 }
