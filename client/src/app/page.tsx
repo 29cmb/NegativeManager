@@ -22,7 +22,9 @@ declare global {
             killInstance: (arg: string) => Promise<void>;
             getProfile: (arg: string) => Promise<Profile>;
             getAllProfiles: () => Promise<Profile[]>;
+            getProfileInfo: (arg: string) => Promise<Profile>;
             isInstanceActive: (arg: string) => Promise<boolean>;
+            deleteMod: (arg: string, arg2: string) => Promise<void>
         };
     }
 }
@@ -128,7 +130,7 @@ const HomePage = () => {
                     </div>
                 </div>
             </div> */}
-        </> : <InstanceInspectPage instance={inspectedInstance} close={() => openInstanceMenu(false)} />
+        </> : <InstanceInspectPage instanceName={inspectedInstance?.name} close={() => openInstanceMenu(false)} />
     )
 }
 

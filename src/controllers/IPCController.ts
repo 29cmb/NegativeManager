@@ -37,6 +37,15 @@ export default class IPCController implements Controller {
             this.BC?.ExitBalatro(name)
         })
 
+        ipcMain.on("delete-mod", (event, instance, mod) => {
+            this.BC?.DeleteModOnInstance(instance, mod)
+        })
+
+        ipcMain.handle("get-profile-info", (event, profileName) => {
+            if(!this.BC) return null;
+            return this.BC.GetProfileInfo(profileName)
+        })
+
         Logging.success("IPC Handlers connected successfully.")
     }
 }

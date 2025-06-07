@@ -48,7 +48,7 @@ const InstancesPage = () => {
                 </div>
             </div>
         </div>
-    </> : <InstanceInspectPage instance={inspectedInstance} close={() => openInstanceMenu(false)} />
+    </> : <InstanceInspectPage instanceName={inspectedInstance?.name} close={() => openInstanceMenu(false)} />
 }
 
 export default InstancesPage;

@@ -12,6 +12,15 @@ import os from "os"
 import tmp from "tmp"
 import * as tar from "tar"
 
+function pathsEqual(a: string, b: string): boolean {
+    const resolvedA = path.resolve(a);
+    const resolvedB = path.resolve(b);
+    if (process.platform === "win32") {
+        return resolvedA.toLowerCase() === resolvedB.toLowerCase();
+    }
+    return resolvedA === resolvedB;
+}
+
 const ProfileContents = [
     {
         name: "Mods",
@@ -437,7 +446,7 @@ export default class BalatroController implements Controller {
             const stat = fs.statSync(path.join(modsDir, file))
             if(!stat.isDirectory()) return
 
-            if(!parsedProfileConfig.Mods.some(mod => mod.path === path.join(modsDir,file))) {
+            if(!parsedProfileConfig.Mods.some(mod => pathsEqual(mod.path, path.join(modsDir, file)))) {
                 parsedProfileConfig.Mods.push({ name: file, path: path.join(modsDir, file) })
             }
         })
@@ -482,6 +491,71 @@ export default class BalatroController implements Controller {
         }
 
         return profileInfo
+    }
+
+    public DeleteModOnInstance(profile: string, mod: string): void {
+        if (!this.DC) {
+            Logging.error("DataController has not yet been initialized. Cannot get profiles.")
+            return
+        }
+
+        var parsedConfig = this.DC.GetManagerConfig()
+        if(parsedConfig == null){
+            Logging.error("Manager config is invalid or not found.")
+            return
+        }
+
+        if(!parsedConfig.profiles_directory || !path.resolve(parsedConfig.profiles_directory)) {
+            Logging.error("Profiles directory not provided")
+            return
+        }
+
+        const profilePath = path.join(parsedConfig.profiles_directory, profile)
+        if(!path.resolve(profilePath)) {
+            Logging.error("Profile does not exist")
+            return
+        }
+
+        
+        const modsPath = path.join(profilePath, "Mods")
+        if(!path.resolve(modsPath)) {
+            Logging.error("Profile does not have a valid mods folder")
+            return
+        }
+
+        const modFolder = path.join(modsPath, mod)
+        if(!path.resolve(modFolder)) {
+            Logging.error("Mod folder does not exist")
+            return
+        }
+        
+        const profileConfig = path.join(profilePath, "profile.json")
+        if(!path.resolve(profileConfig)){
+            Logging.error("Profile.json file not found")
+            return
+        }
+
+        var parsedProfileConfig
+        try {
+            const data = fs.readFileSync(profileConfig, { encoding: "utf-8" })
+            parsedProfileConfig = JSON.parse(data)
+        } catch(err) {
+            Logging.error("Invalid profile.json config.")
+            return
+        }
+
+        if(parsedProfileConfig.Mods) {
+            parsedProfileConfig.Mods = parsedProfileConfig.Mods.filter((mod: { path: string }) => pathsEqual(mod.path, modFolder))
+        } else {
+            parsedProfileConfig.Mods = []
+        }
+
+        fs.rm(modFolder, { recursive: true, force: true }, (err) => {
+            if(err) {
+                Logging.error(`Failed to delete mod folder: ${err.message}`)
+            }
+        })
+        fs.writeFileSync(profileConfig, JSON.stringify(parsedProfileConfig, null, 4), { encoding: "utf-8" })
     }
 
     public IsRunning(profile: string): boolean {

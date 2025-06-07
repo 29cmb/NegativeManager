@@ -50,7 +50,7 @@ const Instance = ({ name, time, icon, openInstance, full }: {name: string, time:
             </button>
             <div>
                 <p className="ml-[20px] font-bold" style={{
-                    fontSize: Math.max(16, 30 - Math.max(0, name.length - (full ? 30 : 6)))
+                    fontSize: Math.max(16, 30 - Math.max(0, name.length - (full ? 30 : 15)))
                 }}>{name}</p>
                 <div className="flex items-center">
                     <Image

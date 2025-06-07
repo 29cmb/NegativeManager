@@ -3,9 +3,20 @@ import { formatTimePlayed, Profile } from "@/app/page";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const InstanceInspectPage = ({ instance, close }: {instance: Profile |  null, close: () => void}) => {
+const InstanceInspectPage = ({ instanceName, close }: {instanceName: string | undefined, close: () => void}) => {
     const [active, setActive] = useState(false)
+    const [instance, setInstance] = useState<Profile | null>(null)
     
+    const refresh = async () => {
+        if(instanceName == undefined) return;
+        const profileInfo = await window.electron.getProfileInfo(instanceName)
+        setInstance(profileInfo)
+    }
+
+    useEffect(() => {
+        refresh()
+    }, [])
+
     useEffect(() => {
         const interval = setInterval(async () => {
             if(instance === null) return;
@@ -60,31 +71,75 @@ const InstanceInspectPage = ({ instance, close }: {instance: Profile |  null, cl
                                     window.electron.launchInstance(instance.name) 
                                 }
                             }}
-                            className="px-[70px] py-[5px] outline-[5px] outline-black rounded-[10px] font-bold text-[30px] [text-shadow:_2px_2px_0_#000,_-2px_2px_0_#000,2px_-2px_0_#000,-2px_-2px_0_#000] hover:scale-110 transition-all ease active:scale-100"
+                            className="px-[70px] py-[5px] outline-[5px] mr-[25px] outline-black rounded-[10px] font-bold text-[30px] [text-shadow:_2px_2px_0_#000,_-2px_2px_0_#000,2px_-2px_0_#000,-2px_-2px_0_#000] hover:scale-110 transition-all ease active:scale-100"
                         >
                             {active ? "Stop" : "Launch"}
                         </button>
                     </div>
                 </div>
             </div>
-            <div className="bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[rgb(50,50,50)] mt-[20px] outline-[5px] w-full">
+            <div className="bg-[rgb(31,31,31)] rounded-[20px] outline-[rgb(50,50,50)] mt-[20px] outline-[5px] w-full">
                 {
                     instance !== null 
                     ? (
                         (!instance.Mods || instance.Mods?.length == 0 )
                         ? <p className="text-center py-[20px] text-[20px]">You do not have any downloaded mods!</p> 
                         : (instance.Mods?.map((mod, index) => {
+                            const bgColor = index % 2 === 0 ? "rgb(28,28,28)" : "rgb(23,23,23)";
                             if (!("tag" in mod)) {
-                                return <div key={index}>
+                                return <div className="p-[10px] flex items-center" key={index} style={{ backgroundColor: bgColor }}>
+                                    <div className="w-[60px] h-[60px] mr-[20px] m-[10px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
+                                        <Image 
+                                            src={"https://29cmb.github.io/CDN/assets/balatro/missing.png"}
+                                            alt={"Unregistered mod icon"}
+                                            width={100}
+                                            height={100}
+                                        />
+                                    </div>
                                     <p>{mod.name}</p>
+                                    <button onClick={async() => {
+                                        if(instance === null) return;
+                                        await window.electron.deleteMod(instance.name, mod.name)
+                                        setTimeout(() => refresh(), 500)
+                                    }} className="w-[45px] h-[45px] m-[10px] outline-[rgb(50,50,50)] hover:bg-[rgb(255,54,54)] hover:outline-[rgb(143,62,62)] hover:scale-105 active:scale-95 transition-ease duration-200 outline-[5px] rounded-[10px] flex-shrink-0 flex items-center justify-center ml-auto">
+                                        <Image 
+                                            src={"https://img.icons8.com/?size=100&id=15015&format=png&color=FFFFFF"}
+                                            width={40}
+                                            height={40}
+                                            alt={"Delete mod button"}
+                                            className="max-w-full max-h-full"
+                                        />
+                                    </button>
                                 </div>
                             }
 
-                            return <div key={index}>
-                                <p>{mod.name}</p>
+                            return <div className="p-[10px] flex items-center" key={index} style={{ backgroundColor: bgColor }}>
+                                <div className="w-[60px] h-[60px] mr-[20px] m-[10px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
+                                    <Image 
+                                        src={mod.icon}
+                                        alt={"Mod icon"}
+                                        width={100}
+                                        height={100}
+                                        className="max-w-full max-h-full object-contain rounded-[10px]"
+                                    />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-[20px]">{mod.name} <span className="font-light text-[12px]"><i>{mod.tag}</i></span></p>
+                                    <p>{mod.author}</p>
+                                </div>
+                                <button className="w-[45px] h-[45px] m-[10px] outline-[rgb(50,50,50)] hover:bg-[rgb(255,54,54)] hover:outline-[rgb(143,62,62)] hover:scale-105 active:scale-95 transition-ease duration-200 outline-[5px] rounded-[10px] flex-shrink-0 flex items-center justify-center ml-auto">
+                                    <Image 
+                                        src={"https://img.icons8.com/?size=100&id=15015&format=png&color=FFFFFF"}
+                                        width={40}
+                                        height={40}
+                                        alt={"Delete mod button"}
+                                        className="max-w-full max-h-full"
+                                    />
+                                </button>
                             </div>
                         }))
-                    ) : <p className="text-center py-[20px] text-[20px]">You do not have any downloaded mods!</p>}
+                    ) : <p className="text-center py-[20px] text-[20px]">You do not have any downloaded mods!</p>
+                }
             </div>
         </div>
     </>
