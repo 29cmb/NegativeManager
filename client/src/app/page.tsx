@@ -48,7 +48,7 @@ const HomePage = () => {
                         </div>
                         <button
                             className="font-bold text-[20px] text-[#23b9ff] underline cursor-pointer"
-                            onClick={() => router.push("/instances")}
+                            onClick={() => router.push("./instances")}
                         >
                             See more ⟶
                         </button>

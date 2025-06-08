@@ -25,7 +25,7 @@ const InstancesPage = () => {
         <div className="flex justify-center">
             <div className="w-[90%] h-[18em] mt-[40px]">
                 <div>
-                    <button onClick={() => router.push("/")} className="font-bold text-[20px] text-[#23b9ff] underline cursor-pointer">Go back</button>
+                    <button onClick={() => router.push(".")} className="font-bold text-[20px] text-[#23b9ff] underline cursor-pointer">Go back</button>
                     <p className="font-bold text-[40px]">All instances</p>
                 </div>
                 <div className="flex flex-wrap justify-between mt-[20px]">
