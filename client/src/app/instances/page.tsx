@@ -21,6 +21,12 @@ const InstancesPage = () => {
         })();
     }, [])
 
+    useEffect(() => {
+        window.electron.onLogEvent((data) => {
+            console.log(data.message)
+        })
+    }, [])
+
     return !instanceMenuOpen ? <>
         <div className="flex justify-center">
             <div className="w-[90%] h-[18em] mt-[40px]">

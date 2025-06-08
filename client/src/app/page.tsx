@@ -26,6 +26,12 @@ const HomePage = () => {
         refreshInstances()
     }, [])
 
+    useEffect(() => {
+        window.electron.onLogEvent((data) => {
+            console.log(data.message)
+        })
+    }, [])
+
     return (
         !instanceMenuOpen ? <>
            <div className="flex justify-center">

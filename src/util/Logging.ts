@@ -1,4 +1,7 @@
-import { LogLevel } from '../Types';
+import { app } from 'electron';
+import { Controller, LogLevel } from '../Types';
+import Registry from './Registry';
+import ElectronController from '../controllers/ElectronController';
 
 const messages = {
     [LogLevel.INFO]: '💼 | %s',
@@ -22,6 +25,14 @@ const log = (message: string, level: LogLevel) => {
     const formattedMessage = template.replace('%s', message);
 
     console.log(formattedMessage)
+    // if(!app.isPackaged) return;
+
+    Registry.AwaitController("ElectronController").then((controller) => {
+        var ElectronController = controller as ElectronController
+        if(ElectronController.mainWindow) {
+            ElectronController.mainWindow.webContents.send("logging-message", { type: level.toString(), message: formattedMessage })
+        }
+    })
 }
 
 const info = (message: string) => log(message, LogLevel.INFO);

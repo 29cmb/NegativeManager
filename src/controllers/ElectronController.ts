@@ -10,7 +10,7 @@ export default class ElectronController implements Controller {
     public description: string = "Controller for Electron specific functionality.";
     public version: string = "1.0.0";
     private IPC: IPCController | null = null;
-    private mainWindow: BrowserWindow | null = null;
+    public mainWindow: BrowserWindow | null = null;
 
     public async init(): Promise<void> {
         this.IPC = (await Registry.AwaitController("IPCController")) as IPCController

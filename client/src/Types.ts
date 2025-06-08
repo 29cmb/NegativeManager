@@ -16,7 +16,8 @@ declare global {
             getAllProfiles: () => Promise<Profile[]>;
             getProfileInfo: (arg: string) => Promise<Profile>;
             isInstanceActive: (arg: string) => Promise<boolean>;
-            deleteMod: (arg: string, arg2: string) => Promise<void>
+            deleteMod: (arg: string, arg2: string) => Promise<void>,
+            onLogEvent: (callback: (data: { type: string, message: string }) => void) => Promise<void>
         };
     }
 }
