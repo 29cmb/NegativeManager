@@ -20,8 +20,9 @@ const InstanceInspectPage = ({ instanceName, close }: {instanceName: string | un
 
     useEffect(() => {
         const interval = setInterval(async () => {
-            if(instance === null) return;
-            const isActive = await window.electron.isInstanceActive(instance?.name)
+            if(instanceName === undefined) return;
+            
+            const isActive = await window.electron.isInstanceActive(instanceName)
             setActive(isActive)
         }, 1000);
         return () => clearInterval(interval);
