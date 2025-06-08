@@ -8,11 +8,14 @@ import InstanceInspectPage from "@/components/InstanceInspectPage";
 import Image from "next/image"
 import { formatTimePlayed } from "@/Util";
 import * as Types from "@/Types"
+import { useRouter } from "next/navigation";
 
 const HomePage = () => {
     const [instances, setInstances] = useState<Types.Profile[]>([])
     const [instanceMenuOpen, openInstanceMenu] = useState<boolean>(false);
     const [inspectedInstance, setInspectedInstance] = useState<Types.Profile | null>(null);
+
+    const router = useRouter()
 
     const refreshInstances = async() => {
         const profiles = await window.electron.getAllProfiles();
@@ -39,11 +42,16 @@ const HomePage = () => {
                                     width={30}
                                     height={30}
                                     alt="Refresh icon"
-                                    className="ml-2 hover:scale-120 transition-all ease duration-300 active:rotate-[360deg]"
+                                    className="ml-2 hover:scale-120 transition-all ease duration-300 active:rotate-[360deg] cursor-pointer"
                                 />
                             </button>
                         </div>
-                        <a className="font-bold text-[20px] text-[#23b9ff]" href="/instances"><u>See more ⟶</u></a>
+                        <button
+                            className="font-bold text-[20px] text-[#23b9ff] underline cursor-pointer"
+                            onClick={() => router.push("/instances")}
+                        >
+                            See more ⟶
+                        </button>
                     </div>
                     <div className="flex flex-wrap justify-between mt-[20px] gap-[20px] ">
                         <div className="flex flex-wrap justify-between w-full">

@@ -3,14 +3,16 @@ import Instance from "@/components/Instance";
 import "../globals.css"
 import { useEffect, useState } from "react";
 import * as Types from "@/Types"
-import Link from "next/link";
 import InstanceInspectPage from "@/components/InstanceInspectPage";
 import { formatTimePlayed } from "@/Util";
+import { useRouter } from "next/navigation";
 
 const InstancesPage = () => {
     const [instances, setInstances] = useState<Types.Profile[]>([])
     const [instanceMenuOpen, openInstanceMenu] = useState<boolean>(false);
     const [inspectedInstance, setInspectedInstance] = useState<Types.Profile | null>(null);
+
+    const router = useRouter()
 
     useEffect(() => {
         (async () => {
@@ -23,7 +25,7 @@ const InstancesPage = () => {
         <div className="flex justify-center">
             <div className="w-[90%] h-[18em] mt-[40px]">
                 <div>
-                    <Link href={"/"} className="font-bold text-[20px] text-[#23b9ff]"><u>Go back</u></Link>
+                    <button onClick={() => router.push("/")} className="font-bold text-[20px] text-[#23b9ff] underline cursor-pointer">Go back</button>
                     <p className="font-bold text-[40px]">All instances</p>
                 </div>
                 <div className="flex flex-wrap justify-between mt-[20px]">
