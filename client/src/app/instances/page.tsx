@@ -2,14 +2,15 @@
 import Instance from "@/components/Instance";
 import "../globals.css"
 import { useEffect, useState } from "react";
-import { formatTimePlayed, Profile } from "../page";
+import * as Types from "@/Types"
 import Link from "next/link";
 import InstanceInspectPage from "@/components/InstanceInspectPage";
+import { formatTimePlayed } from "@/Util";
 
 const InstancesPage = () => {
-    const [instances, setInstances] = useState<Profile[]>([])
+    const [instances, setInstances] = useState<Types.Profile[]>([])
     const [instanceMenuOpen, openInstanceMenu] = useState<boolean>(false);
-    const [inspectedInstance, setInspectedInstance] = useState<Profile | null>(null);
+    const [inspectedInstance, setInspectedInstance] = useState<Types.Profile | null>(null);
 
     useEffect(() => {
         (async () => {

@@ -1,11 +1,12 @@
 'use client'
-import { formatTimePlayed, Profile } from "@/app/page";
+import * as Types from "@/Types"
+import { formatTimePlayed } from "@/Util";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const InstanceInspectPage = ({ instanceName, close }: {instanceName: string | undefined, close: () => void}) => {
     const [active, setActive] = useState(false)
-    const [instance, setInstance] = useState<Profile | null>(null)
+    const [instance, setInstance] = useState<Types.Profile | null>(null)
     
     const refresh = async () => {
         if(instanceName == undefined) return;
@@ -127,7 +128,11 @@ const InstanceInspectPage = ({ instanceName, close }: {instanceName: string | un
                                     <p className="font-bold text-[20px]">{mod.name} <span className="font-light text-[12px]"><i>{mod.tag}</i></span></p>
                                     <p>{mod.author}</p>
                                 </div>
-                                <button className="w-[45px] h-[45px] m-[10px] outline-[rgb(50,50,50)] hover:bg-[rgb(255,54,54)] hover:outline-[rgb(143,62,62)] hover:scale-105 active:scale-95 transition-ease duration-200 outline-[5px] rounded-[10px] flex-shrink-0 flex items-center justify-center ml-auto">
+                                <button onClick={async() => {
+                                    if(instance === null) return;
+                                    await window.electron.deleteMod(instance.name, mod.name)
+                                    setTimeout(() => refresh(), 500)
+                                }} className="w-[45px] h-[45px] m-[10px] outline-[rgb(50,50,50)] hover:bg-[rgb(255,54,54)] hover:outline-[rgb(143,62,62)] hover:scale-105 active:scale-95 transition-ease duration-200 outline-[5px] rounded-[10px] flex-shrink-0 flex items-center justify-center ml-auto">
                                     <Image 
                                         src={"https://img.icons8.com/?size=100&id=15015&format=png&color=FFFFFF"}
                                         width={40}

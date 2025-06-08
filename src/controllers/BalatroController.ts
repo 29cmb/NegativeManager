@@ -545,7 +545,7 @@ export default class BalatroController implements Controller {
         }
 
         if(parsedProfileConfig.Mods) {
-            parsedProfileConfig.Mods = parsedProfileConfig.Mods.filter((mod: { path: string }) => pathsEqual(mod.path, modFolder))
+            parsedProfileConfig.Mods = parsedProfileConfig.Mods.filter((mod: { path: string }) => !pathsEqual(mod.path, modFolder))
         } else {
             parsedProfileConfig.Mods = []
         }

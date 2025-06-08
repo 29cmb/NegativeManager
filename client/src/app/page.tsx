@@ -5,49 +5,22 @@ import Instance from "@/components/Instance";
 import './globals.css'
 import { useEffect, useState } from "react";
 import InstanceInspectPage from "@/components/InstanceInspectPage";
-
-export type Profile = { 
-    name: string, 
-    DateCreated: number, 
-    TimePlayed: number, 
-    LastPlayed: number, 
-    Icon: string, 
-    Mods: ({ name: string, author: string, icon: string, tag: string, path: string } | { name: string, path: string })[] 
-}
-
-declare global {
-    interface Window {
-        electron: {
-            launchInstance: (arg: string) => Promise<void>;
-            killInstance: (arg: string) => Promise<void>;
-            getProfile: (arg: string) => Promise<Profile>;
-            getAllProfiles: () => Promise<Profile[]>;
-            getProfileInfo: (arg: string) => Promise<Profile>;
-            isInstanceActive: (arg: string) => Promise<boolean>;
-            deleteMod: (arg: string, arg2: string) => Promise<void>
-        };
-    }
-}
-
-export function formatTimePlayed(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours < 100) {
-        return `${hours}h ${mins}m`;
-    }
-    return `${hours}h`;
-}
+import Image from "next/image"
+import { formatTimePlayed } from "@/Util";
+import * as Types from "@/Types"
 
 const HomePage = () => {
-    const [instances, setInstances] = useState<Profile[]>([])
+    const [instances, setInstances] = useState<Types.Profile[]>([])
     const [instanceMenuOpen, openInstanceMenu] = useState<boolean>(false);
-    const [inspectedInstance, setInspectedInstance] = useState<Profile | null>(null);
+    const [inspectedInstance, setInspectedInstance] = useState<Types.Profile | null>(null);
+
+    const refreshInstances = async() => {
+        const profiles = await window.electron.getAllProfiles();
+        setInstances(profiles || []);
+    }
 
     useEffect(() => {
-        (async () => {
-            const profiles = await window.electron.getAllProfiles();
-            setInstances(profiles || []);
-        })();
+        refreshInstances()
     }, [])
 
     return (
@@ -55,8 +28,21 @@ const HomePage = () => {
            <div className="flex justify-center">
                 <div className="w-[90%] h-[18em] mt-[40px]">
                     <div className="flex justify-between items-end">
-                        <p className="font-bold text-[40px]">Your instances</p>
-                        {/* TODO: See more */}
+                        <div className="flex items-center">
+                            <span className="font-bold text-[40px]">Your instances</span>
+                            <button onClick={() => {
+                                setInstances([])
+                                setTimeout(() => refreshInstances(), 500)
+                            }}>
+                                <Image
+                                    src={"https://img.icons8.com/?size=100&id=59872&format=png&color=FFFFFF"}
+                                    width={30}
+                                    height={30}
+                                    alt="Refresh icon"
+                                    className="ml-2 hover:scale-120 transition-all ease duration-300 active:rotate-[360deg]"
+                                />
+                            </button>
+                        </div>
                         <a className="font-bold text-[20px] text-[#23b9ff]" href="/instances"><u>See more ⟶</u></a>
                     </div>
                     <div className="flex flex-wrap justify-between mt-[20px] gap-[20px] ">
