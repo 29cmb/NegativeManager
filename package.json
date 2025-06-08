@@ -20,7 +20,8 @@
         "nsis",
         "portable"
       ]
-    }
+    },
+    "publish": null
   },
   "keywords": [],
   "author": "",
