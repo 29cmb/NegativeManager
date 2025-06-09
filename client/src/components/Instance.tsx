@@ -48,10 +48,15 @@ const Instance = ({ name, time, icon, openInstance, full }: {name: string, time:
                     unoptimized
                 />
             </button>
-            <div>
-                <p className="ml-[20px] font-bold" style={{
-                    fontSize: Math.max(16, 30 - Math.max(0, name.length - (full ? 30 : 15)))
-                }}>{name}</p>
+            <div className="flex-1 w-0">
+                <p
+                    className="ml-[20px] font-bold truncate max-w-full"
+                    style={{
+                        fontSize: Math.max(16, 30 - Math.max(0, name.length - (full ? 30 : 15)))
+                    }}
+                >
+                    {name}
+                </p>
                 <div className="flex items-center">
                     <Image
                         alt="Clock icon"
