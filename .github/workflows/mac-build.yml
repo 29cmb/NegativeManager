@@ -1,4 +1,4 @@
-name: "Compile windows build"
+name: "Compile macos build"
 on:
   push:
     branches:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,4 +29,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: "Installer & Portable"
-            path: "dist/*.exe"
+            path: |
+                "dist/*.dmg"
+                "dist/*.zip"
