@@ -28,7 +28,7 @@ jobs:
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
-            name: Installer & Portable
+            name: Windows Build Output
             path: dist/*.exe
   build-mac:
     runs-on: macos-latest
@@ -50,7 +50,7 @@ jobs:
       - name: "Upload files"
         uses: actions/upload-artifact@v4
         with:
-            name: "Installer & Portable"
+            name: MacOS Build Output
             path: |
               dist/*.dmg
               dist/*.zip
