@@ -1,0 +1,47 @@
+{
+  "name": "balatroinstancemanager",
+  "description": "A utility for managing balatro instances",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "concurrently \"cd server && npm run dev\" \"npx wait-port http://localhost:11731 && npm run app\" \"cd client && npm run dev\"",
+    "app": "tsc && electron .",
+    "client:build": "cd client && npm run build && cd .. && node fixout.js",
+    "pack": "tsc && npm run client:build && electron-builder"
+  },
+  "build": {
+    "productName": "Balatro Instance Manager",
+    "files": [
+      "dist/**/*",
+      "client/out/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "publish": null
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/tmp": "^0.2.6",
+    "@types/unzipper": "^0.10.11",
+    "concurrently": "^9.1.2",
+    "electron": "^36.3.1",
+    "electron-builder": "^26.0.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "wait-port": "^1.1.0"
+  },
+  "dependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "adm-zip": "^0.5.16",
+    "axios": "^1.9.0",
+    "tar": "^7.4.3",
+    "tmp": "^0.2.3"
+  }
+}
