@@ -9,7 +9,10 @@ import Image from "next/image"
 import { formatTimePlayed } from "@/Util";
 import * as Types from "@/Types"
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import SettingsModal from "@/components/SettingsModal";
+=======
+>>>>>>> 988ccabe9dba4a100902631c8e67d0587f760d9a
 
 const HomePage = () => {
     const [instances, setInstances] = useState<Types.Profile[]>([])

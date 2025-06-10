@@ -30,6 +30,7 @@
   "devDependencies": {
     "@types/tmp": "^0.2.6",
     "@types/unzipper": "^0.10.11",
+    "@types/adm-zip": "^0.5.7",
     "concurrently": "^9.1.2",
     "electron": "^36.3.1",
     "electron-builder": "^26.0.12",
@@ -38,7 +39,6 @@
     "wait-port": "^1.1.0"
   },
   "dependencies": {
-    "@types/adm-zip": "^0.5.7",
     "adm-zip": "^0.5.16",
     "axios": "^1.9.0",
     "tar": "^7.4.3",
