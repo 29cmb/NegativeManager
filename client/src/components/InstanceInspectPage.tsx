@@ -80,6 +80,29 @@ const InstanceInspectPage = ({ instanceName, close }: {instanceName: string | un
                     </div>
                 </div>
             </div>
+            <div className="h-[60px] mt-[20px] bg-[rgb(31,31,31)] w-full rounded-[20px] gap-[15px] p-[20px] outline-[rgb(50,50,50)] outline-[5px] flex items-center justify-end">
+                <button className="h-[40px] w-[40px] rounded-[5px] outline-[rgb(50,50,50)] outline-[5px]">
+                    <Image
+                        src={"https://img.icons8.com/?size=100&id=59872&format=png&color=FFFFFF"}
+                        width={25}
+                        height={25}
+                        alt="Refresh icon"
+                        className="ml-2 hover:scale-120 transition-all ease duration-300 active:rotate-[360deg] cursor-pointer"
+                        onClick={refresh}
+                    />
+                </button>
+                <button className="h-[40px] w-[40px] rounded-[5px] outline-[rgb(50,50,50)] outline-[5px]">
+                    <Image
+                        src={"https://img.icons8.com/?size=100&id=62888&format=png&color=FFFFFF"}
+                        width={25}
+                        height={25}
+                        alt="Refresh icon"
+                        className="ml-2 hover:scale-120 transition-all ease duration-300 active:scale-95 cursor-pointer"
+                        onClick={() => {}} 
+                    />
+                    {/* TODO: add content button */}
+                </button>
+            </div>
             <div className="bg-[rgb(31,31,31)] rounded-[20px] outline-[rgb(50,50,50)] mt-[20px] outline-[5px] w-full">
                 {
                     instance !== null 
