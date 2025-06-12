@@ -42,7 +42,8 @@ export default class ElectronController implements Controller {
         this.mainWindow = new BrowserWindow({
             width: 1200,
             height: 600,
-            title: "Balatro Instance Manager",
+            title: "Negative Manager",
+            icon: path.join(__dirname, "../..", "icon.png"),
             webPreferences: {
                 preload: path.join(__dirname, "..", "util", "preload.js")
             }

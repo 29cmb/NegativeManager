@@ -10,6 +10,7 @@
     "pack": "tsc && npm run client:build && electron-builder"
   },
   "build": {
+    "icon": "./icon.png",
     "productName": "Balatro Instance Manager",
     "files": [
       "dist/**/*",

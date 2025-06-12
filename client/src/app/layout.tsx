@@ -8,7 +8,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Balatro Instance Manager",
+  title: "Negative Manager",
   description: "Managing your balatro instances since June 2025!",
 };
 
