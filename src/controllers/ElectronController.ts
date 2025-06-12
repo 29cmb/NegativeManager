@@ -43,7 +43,7 @@ export default class ElectronController implements Controller {
             width: 1200,
             height: 600,
             title: "Negative Manager",
-            icon: path.join(__dirname, "../..", "icon.png"),
+            icon: path.join(__dirname, "../..", "icons", "512.png"),
             webPreferences: {
                 preload: path.join(__dirname, "..", "util", "preload.js")
             }

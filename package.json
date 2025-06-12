@@ -1,5 +1,5 @@
 {
-  "name": "balatroinstancemanager",
+  "name": "negative-manager",
   "description": "A utility for managing balatro instances",
   "version": "1.0.0",
   "main": "dist/index.js",
@@ -10,8 +10,8 @@
     "pack": "tsc && npm run client:build && electron-builder"
   },
   "build": {
-    "icon": "./icon.png",
-    "productName": "Balatro Instance Manager",
+    "icon": "./icons/512.png",
+    "productName": "Negative Manager",
     "files": [
       "dist/**/*",
       "client/out/**/*"
