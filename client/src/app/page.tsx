@@ -10,12 +10,15 @@ import { formatTimePlayed } from "@/Util";
 import * as Types from "@/Types"
 import { useRouter } from "next/navigation";
 import SettingsModal from "@/components/SettingsModal";
+import ErrorModal from "@/components/ErrorModal";
 
 const HomePage = () => {
     const [instances, setInstances] = useState<Types.Profile[]>([])
     const [instanceMenuOpen, openInstanceMenu] = useState<boolean>(false);
     const [inspectedInstance, setInspectedInstance] = useState<Types.Profile | null>(null);
     const [profileInfoModalOpen, setProfileInfoModalOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null)
+    const [connected, setConnected] = useState<boolean>(false)
 
     const router = useRouter()
 
@@ -40,8 +43,18 @@ const HomePage = () => {
         })
     }, [])
 
+    useEffect(() => {
+        console.log(process.env.SERVER_URL)
+        fetch(process.env.SERVER_URL as string).then(() => {
+            setConnected(true)
+        }).catch(() => {
+            setError("Could not connect to the registry! Online features have been disabled!")
+        })
+    }, [])
+
     return (
         !instanceMenuOpen ? <>
+            <ErrorModal error={error} setError={setError} />
             <SettingsModal open={profileInfoModalOpen} setOpen={setProfileInfoModalOpen}/>
             <div className="flex justify-center">
                 <div className="w-[90%] h-[18em] mt-[40px]">

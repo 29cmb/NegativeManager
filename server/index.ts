@@ -7,12 +7,14 @@ import path from 'path';
 import session from 'express-session';
 import database from './modules/database';
 import sessionSave from 'connect-mongodb-session';
+import cors from 'cors'
 
 const MongoDBStore = sessionSave(session);
 
 const app: Express = express();
 
 app.use(bodyParser.json());
+app.use(cors())
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req: Request, res, next) => {
     if(req.method !== "POST"){ 

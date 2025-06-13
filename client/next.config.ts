@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: true
   },
-  output: "export"
+  output: "export",
+  env: {
+    SERVER_URL: "https://napi.devcmb.hackclub.app"
+  }
 };
 
 export default withFlowbiteReact(nextConfig);
