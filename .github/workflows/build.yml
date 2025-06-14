@@ -23,10 +23,10 @@ jobs:
         with:
           path: |
             ~/.npm
-            ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+            ${{ github.workspace }}/client/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('client/**/package-lock.json') }}-${{ hashFiles('client/**/*.[jt]s', 'client/**/*.[jt]sx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('client/**/package-lock.json') }}-
 
       - name: Install dependencies
         run: npm install && cd client && npm install
@@ -54,10 +54,10 @@ jobs:
         with:
           path: |
             ~/.npm
-            ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+            ${{ github.workspace }}/client/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('client/**/package-lock.json') }}-${{ hashFiles('client/**/*.[jt]s', 'client/**/*.[jt]sx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('client/**/package-lock.json') }}-
 
       - name: Install dependencies
         run: npm install && cd client && npm install
