@@ -29,7 +29,8 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('client/**/package-lock.json') }}-
 
       - name: Install dependencies
-        run: npm install && cd client && npm install
+        run: npm ci && cd client && npm ci
+        shell: cmd
 
       - name: Run packing action
         run: npm run pack
@@ -60,7 +61,7 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('client/**/package-lock.json') }}-
 
       - name: Install dependencies
-        run: npm install && cd client && npm install
+        run: npm ci && cd client && npm ci
 
       - name: "Run packing action"
         run: npm run pack
