@@ -25,3 +25,48 @@ declare global {
         };
     }
 }
+
+export type PublicModData = {
+    name: string,
+    description: string,
+    icon: string,
+    author: string,
+    source_code: string,
+    archived: boolean,
+    downloads: number,
+    likes: number,
+    releases: PublicReleaseData[],
+    // Fields that will be removed
+    updateApprovalPending?: boolean,
+    approved?: boolean,
+    reviewed?: boolean,
+    moderationReason?: string | null
+}
+
+export type PublicModpackData = {
+    name: string,
+    description: string,
+    author: string
+    icon: string,
+    mods: [{ id: string, tag: string }],
+    downloads: number,
+    likes: number,
+    // you get the idea
+    approved?: boolean,
+    reviewed?: boolean,
+    moderationReason?: string | null
+}
+
+export type PublicReleaseData = {
+    name: string,
+    body: string,
+    tag: string,
+    url: string,
+    dependencies: [{ id: string, tag: string }],
+    created_at: string,
+    checksum: string,
+    // removed fields
+    approved?: boolean,
+    reviewed?: boolean,
+    moderationReason?: string | null
+}

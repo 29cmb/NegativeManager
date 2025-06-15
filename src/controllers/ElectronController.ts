@@ -42,12 +42,16 @@ export default class ElectronController implements Controller {
         this.mainWindow = new BrowserWindow({
             width: 1200,
             height: 600,
+            minWidth: 1200,
+            minHeight: 600,
             title: "Negative Manager",
             icon: path.join(__dirname, "../..", "icons", "512.png"),
             webPreferences: {
                 preload: path.join(__dirname, "..", "util", "preload.js")
             }
         })
+
+        this.mainWindow.maximize()
 
         if (!app.isPackaged) {
             this.mainWindow.loadURL('http://localhost:11731');
