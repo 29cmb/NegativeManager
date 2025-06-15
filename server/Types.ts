@@ -64,7 +64,8 @@ export type Database = {
         ModpackComment(req: StrictRouteRequest, modpack: string, comment: string): RouteMethodReturn,
         GetModpackComments(modpack: string): Promise<{ status: number, response: {[key: string]: any}}>,
         ChangeModpackLikeStatus(req: StrictRouteRequest, mod: string, status: boolean): RouteMethodReturn,
-        ChangeModpackSettings(req: StrictRouteRequest, modpackId: string, settings: { name?: string, description?: string, icon?: string, mods?: [{id: string, tag: string}] }): RouteMethodReturn
+        ChangeModpackSettings(req: StrictRouteRequest, modpackId: string, settings: { name?: string, description?: string, icon?: string, mods?: [{id: string, tag: string}] }): RouteMethodReturn,
+        GetPublicRelease(modId: string, tag: string): Promise<PublicReleaseData | null>
     },
     init(): Promise<void>
 }

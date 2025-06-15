@@ -2,7 +2,7 @@ import { AggregateOptions, MongoClient, ObjectId, ServerApiVersion, WithId } fro
 import { argon2encrypt, argon2verify } from "./encryption";
 import axios from "axios"
 import crypto from "crypto"
-import { CommentData, Database, ModData, ModpackData, PublicModData, PublicModpackData, StrictRouteRequest, UserData } from "../Types";
+import { CommentData, Database, ModData, ModpackData, PublicModData, PublicModpackData, PublicReleaseData, ReleaseData, StrictRouteRequest, UserData } from "../Types";
 
 const uri = `mongodb+srv://${process.env.DATABASEUSER}:${process.env.DATABASEPASS}@${process.env.DATABASEURI}/?retryWrites=true&w=majority&appName=${process.env.DATABASEAPPNAME}`;
 
@@ -127,6 +127,13 @@ const data = {
                             delete release.moderationReason;
                         }
                     }
+
+                    const author = await this.methods.getUser(mod.author)
+                    if(author == null) {
+                        (mod.author as unknown as { id: string | null, name: string }) = { id: null, name: "Unknown user" }
+                    } else {
+                        (mod.author as unknown as { id: string | null, name: string }) = {id: author?._id.toString(), name: author?.username }
+                    }
             
                     return mod;
             
@@ -140,6 +147,19 @@ const data = {
                 const mod = await this.methods.GetMod(modId)
                 if (!mod || !Array.isArray(mod.releases)) return null;
                 return mod.releases.find((release: any) => release.tag === tag) || null;
+            }
+
+            this.methods.GetPublicRelease = async (modId, tag) => {
+                const mod = await this.methods.GetMod(modId)
+                if (!mod || !Array.isArray(mod.releases)) return null;
+                const release: PublicReleaseData = mod.releases.find((release: any) => release.tag === tag) as unknown as PublicReleaseData
+                if(release == null) return null
+
+                delete release.approved;
+                delete release.reviewed;
+                delete release.moderationReason;
+
+                return release;
             }
 
             this.methods.GetModpack = async(modpackId: string) => {
@@ -160,7 +180,7 @@ const data = {
 
             this.methods.GetPublicModpack = async (id) => {
                 try {
-                    const modpack = await this.methods.GetModpack(id) as WithId<Document & PublicModpackData> | null
+                    var modpack = await this.methods.GetModpack(id) as WithId<Document & PublicModpackData> | null
                     if(modpack == null) {
                         return null
                     }
@@ -168,6 +188,24 @@ const data = {
                     delete modpack.approved;
                     delete modpack.reviewed;
                     delete modpack.moderationReason;
+
+                    const author = await this.methods.getUser(modpack.author)
+                    if(author == null) {
+                        (modpack.author as unknown as { id: string | null, name: string }) = { id: null, name: "Unknown user" }
+                    } else {
+                        (modpack.author as unknown as { id: string | null, name: string }) = {id: author?._id.toString(), name: author?.username }
+                    }
+
+                    for (var mod of modpack.mods) {
+                        const dbMod = await this.methods.GetPublicMod(mod.id) as unknown as Omit<PublicModData, 'releases'> & {releases?: [PublicReleaseData]}
+                        if(!dbMod) continue;
+
+                        delete dbMod.releases;
+
+                        const release = await this.methods.GetPublicRelease(mod.id, mod.tag)
+                        if(release == null) continue;
+                        dbMod.releases = [release]
+                    }
 
                     return modpack;
             
