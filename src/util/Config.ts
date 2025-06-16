@@ -10,6 +10,11 @@ export default {
         CreateDefaultProfile: true,
         DefaultProfileName: "Default",
 
+        // Export testing
+        DebugExportMode: true,
+        ExportProfile: "Default",
+        ExportPath: "C:\\Users\\devcm\\Downloads",
+
         // Client connection
         ClientPort: 11731
     },

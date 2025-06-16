@@ -22,9 +22,20 @@ export type BackendConfiguration = {
         LaunchBalatroOnStart: boolean,
         AutolaunchProfile: string | undefined,
         CreateDefaultProfile: boolean,
-        DefaultProfileName: string
+        DefaultProfileName: string,
+        DebugExportMode: boolean,
+        ExportProfile: string,
+        ExportPath: string
     },
     ControllerAwaitTimeout: number
+}
+
+export type ProfileConfig = { 
+    DateCreated: number, 
+    TimePlayed: number, 
+    LastPlayed: number, 
+    Icon: string, 
+    Mods: ({ name: string, author: string, icon: string, tag: string, path: string, [key: string]: string })[] 
 }
 
 export type ManagerConfiguration = {

@@ -5,7 +5,7 @@ import * as path from "path";
 import Logging from "../util/Logging";
 
 export const isWindows = os.platform() === "win32";
-export const APPDATA_PATH = path.join((isWindows ? process.env.APPDATA : `${process.env.HOME}/Library/Application Support`) || '', 'Balatro Instance Manager');
+export const APPDATA_PATH = path.join((isWindows ? process.env.APPDATA : `${process.env.HOME}/Library/Application Support`) || '', 'Negative Manager');
 
 const defaultFiles = [
     {
