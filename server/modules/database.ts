@@ -729,6 +729,13 @@ const data = {
                                 delete release.moderationReason;
                             }
                         }
+
+                        const author = await this.methods.getUser(mod.author)
+                        if(author == null) {
+                            (mod.author as unknown as { id: string | null, name: string }) = { id: null, name: "Unknown user" }
+                        } else {
+                            (mod.author as unknown as { id: string | null, name: string }) = {id: author?._id.toString(), name: author?.username }
+                        }
                     }
 
                     return {
@@ -956,6 +963,26 @@ const data = {
                     }
 
                     const modpacks = await this.collections.modpacks.catalog.aggregate(search).toArray()
+
+                    for(const modpack of modpacks) {
+                        const author = await this.methods.getUser(modpack.author)
+                        if(author == null) {
+                            (modpack.author as unknown as { id: string | null, name: string }) = { id: null, name: "Unknown user" }
+                        } else {
+                            (modpack.author as unknown as { id: string | null, name: string }) = {id: author?._id.toString(), name: author?.username }
+                        }
+    
+                        for (var mod of modpack.mods) {
+                            const dbMod = await this.methods.GetPublicMod(mod.id) as unknown as Omit<PublicModData, 'releases'> & {releases?: [PublicReleaseData]}
+                            if(!dbMod) continue;
+    
+                            delete dbMod.releases;
+    
+                            const release = await this.methods.GetPublicRelease(mod.id, mod.tag)
+                            if(release == null) continue;
+                            dbMod.releases = [release]
+                        }
+                    }
 
                     return {
                         success: true,

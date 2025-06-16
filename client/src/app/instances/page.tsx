@@ -3,7 +3,7 @@ import Instance from "@/components/Instance";
 import "../globals.css"
 import { useEffect, useState } from "react";
 import * as Types from "@/Types"
-import InstanceInspectPage from "@/components/InstanceInspectPage";
+import InstanceInspectPage from "@/components/pages/InstanceInspectPage";
 import { formatTimePlayed } from "@/Util";
 import { useRouter } from "next/navigation";
 

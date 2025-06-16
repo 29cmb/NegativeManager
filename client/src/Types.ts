@@ -27,10 +27,11 @@ declare global {
 }
 
 export type PublicModData = {
+    _id: string,
     name: string,
     description: string,
     icon: string,
-    author: string,
+    author: { name: string, id: string },
     source_code: string,
     archived: boolean,
     downloads: number,
@@ -44,9 +45,10 @@ export type PublicModData = {
 }
 
 export type PublicModpackData = {
+    _id: string,
     name: string,
     description: string,
-    author: string
+    author: { name: string, id: string },
     icon: string,
     mods: [{ id: string, tag: string }],
     downloads: number,
