@@ -196,8 +196,9 @@ const data = {
                         (modpack.author as unknown as { id: string | null, name: string }) = {id: author?._id.toString(), name: author?.username }
                     }
 
-                    for (var mod of modpack.mods) {
-                        const dbMod = await this.methods.GetPublicMod(mod.id) as unknown as Omit<PublicModData, 'releases'> & {releases?: [PublicReleaseData]}
+                    for (var i = 0; i < modpack.mods.length; i++) {
+                        var mod = modpack.mods[i];
+                        var dbMod = await this.methods.GetPublicMod(mod.id) as unknown as Omit<PublicModData, 'releases'> & {releases?: [PublicReleaseData]}
                         if(!dbMod) continue;
 
                         delete dbMod.releases;
@@ -205,6 +206,8 @@ const data = {
                         const release = await this.methods.GetPublicRelease(mod.id, mod.tag)
                         if(release == null) continue;
                         dbMod.releases = [release]
+
+                        modpack.mods[i] = { ...dbMod, id: mod.id, tag: mod.tag };
                     }
 
                     return modpack;

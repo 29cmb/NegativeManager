@@ -204,7 +204,7 @@ const HomePage = () => {
                         </div>
                     </div>
                 </>}
-            </> : <ModpackInspectPage modpackID={inspectingModpack._id} close={() => setInspectedInstance(null)} />
+            </> : <ModpackInspectPage modpackID={inspectingModpack._id} close={() => setInspectingModpack(null)} />
         ) : <InstanceInspectPage instanceName={inspectedInstance?.name} close={() => openInstanceMenu(false)} />
     )
 }

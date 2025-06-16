@@ -19,7 +19,7 @@ const ModpackInspectPage = ({ modpackID, close }: { modpackID: string, close: ()
 
     return <>
             <div className="flex flex-col items-start w-[80%] m-auto mt-[40px]">
-                <button className="font-bold text-[20px] text-[#23b9ff] mb-2" onClick={() => close()}><u>Go back</u></button>
+                <button className="font-bold cursor-pointer text-[20px] text-[#23b9ff] mb-2" onClick={() => close()}><u>Go back</u></button>
                 <div className="bg-[rgb(31,31,31)] p-[20px] rounded-[20px] outline-[rgb(50,50,50)] outline-[5px] w-full">
                     <div className="flex items-center w-full">
                         <div className="w-[120px] h-[120px] outline-[rgb(50,50,50)] outline-[5px] rounded-[10px] flex-shrink-0">
